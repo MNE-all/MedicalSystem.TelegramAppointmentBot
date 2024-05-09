@@ -4,3 +4,4 @@ obj/
 riderModule.iml
 /_ReSharper.Caches/
 TelegramAppointmentBot/Configuration.cs
+TelegramAppointmentBot.Context/Configuration.cs
