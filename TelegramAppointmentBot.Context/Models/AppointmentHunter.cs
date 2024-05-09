@@ -2,7 +2,7 @@ namespace TelegramAppointmentBot.Context.Models;
 
 public class AppointmentHunter
 {
-    public Guid Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
     
     public Profile? Patient { get; set; }
     public Guid PatientId { get; set; }
