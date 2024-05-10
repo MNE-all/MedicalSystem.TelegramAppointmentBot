@@ -16,10 +16,7 @@ public class AppointmentContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseMySql(
-            Configuration.connectionString, 
-            new MySqlServerVersion(new Version(8, 0, 36))
-        );
+        optionsBuilder.UseSqlServer(Configuration.connectionString);
         base.OnConfiguring(optionsBuilder);
     }
 }
