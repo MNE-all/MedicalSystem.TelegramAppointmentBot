@@ -12,8 +12,8 @@ using TelegramAppointmentBot.Context;
 namespace TelegramAppointmentBot.Context.Migrations
 {
     [DbContext(typeof(AppointmentContext))]
-    [Migration("20240509202735_Init2")]
-    partial class Init2
+    [Migration("20240514170601_Init")]
+    partial class Init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -55,33 +55,28 @@ namespace TelegramAppointmentBot.Context.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("Birthdate")
+                    b.Property<DateTime?>("Birthdate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsFilled")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("OMS")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<long>("OwnerId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("OwnerSystemId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Patronomyc")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Surname")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
@@ -90,18 +85,19 @@ namespace TelegramAppointmentBot.Context.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OwnerSystemId");
+                    b.HasIndex("OwnerId");
 
                     b.ToTable("Profiles");
                 });
 
             modelBuilder.Entity("TelegramAppointmentBot.Context.Models.User", b =>
                 {
-                    b.Property<int>("SystemId")
+                    b.Property<Guid>("SystemId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("uniqueidentifier");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SystemId"), 1L, 1);
+                    b.Property<Guid?>("CurrentProfile")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -109,6 +105,9 @@ namespace TelegramAppointmentBot.Context.Migrations
 
                     b.Property<long>("Id")
                         .HasColumnType("bigint");
+
+                    b.Property<int>("Statement")
+                        .HasColumnType("int");
 
                     b.HasKey("SystemId");
 
@@ -130,7 +129,7 @@ namespace TelegramAppointmentBot.Context.Migrations
                 {
                     b.HasOne("TelegramAppointmentBot.Context.Models.User", "Owner")
                         .WithMany()
-                        .HasForeignKey("OwnerSystemId")
+                        .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

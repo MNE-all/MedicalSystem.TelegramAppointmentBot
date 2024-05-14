@@ -13,7 +13,9 @@ public class ProfileService : IProfileService
         var result = new List<GetUserProfiles>();
         using (var db = new AppointmentContext())
         {
-            var list = db.Profiles.Where(p => p.OwnerId == userId).ToList();
+            var owner = db.Users.First(p => p.Id == userId);
+
+            var list = db.Profiles.Where(p => p.OwnerId == owner.SystemId).ToList();
             result.AddRange(list.Select(profile => new GetUserProfiles { Id = profile.Id, Title = profile.Title }));
         }
 
@@ -29,25 +31,108 @@ public class ProfileService : IProfileService
         }
     }
 
-    public Task<Profile> AddProfile(long ownerId, AddProfile newProfile, CancellationToken cancellationToken)
+    public Task<Profile> AddProfile(long ownerId, string title, CancellationToken cancellationToken)
     {
         using (var db = new AppointmentContext())
         {
-            var fullProfile = new Profile
+            var owner = db.Users.First(p => p.Id == ownerId);
+            
+            var profile = db.Profiles.Add(new Profile
             {
-                Surname = newProfile.Surname,
-                Name = newProfile.Name,
-                Patronomyc = newProfile.Patronomyc,
-                Birthdate = newProfile.Birthdate,
-                Email = newProfile.Email,
-                Title = newProfile.Title,
-                OMS = newProfile.OMS,
-                OwnerId = ownerId
-            };
-            var result = db.Profiles.Add(fullProfile).Entity;
+                OwnerId = owner.SystemId,
+                Title = title,
+            }).Entity;
             db.SaveChanges();
+            return Task<Profile>.FromResult(profile);
+        }
+    }
 
-            return Task<Profile>.FromResult(result);
+    public Task ChangeTitle(Guid profileId, string Title, CancellationToken cancellationToken)
+    {
+        using (var db = new AppointmentContext())
+        {
+            db.Profiles.First(p => p.Id == profileId).Title = Title;
+            db.SaveChanges();
+            return Task.CompletedTask;
+        }
+    }
+
+    public Task ChangeOMS(Guid profileId, string OMS, CancellationToken cancellationToken)
+    {
+        using (var db = new AppointmentContext())
+        {
+            db.Profiles.First(p => p.Id == profileId).OMS = OMS;
+            db.SaveChanges();
+            return Task.CompletedTask;
+        }
+    }
+
+    public Task ChangeSurname(Guid profileId, string Surname, CancellationToken cancellationToken)
+    {
+        using (var db = new AppointmentContext())
+        {
+            db.Profiles.First(p => p.Id == profileId).Surname = Surname;
+            db.SaveChanges();
+            return Task.CompletedTask;
+        }
+    }
+
+    public Task ChangeName(Guid profileId, string Name, CancellationToken cancellationToken)
+    {
+        using (var db = new AppointmentContext())
+        {
+            db.Profiles.First(p => p.Id == profileId).Name = Name;
+            db.SaveChanges();
+            return Task.CompletedTask;
+        }
+    }
+
+    public Task ChangePatronomyc(Guid profileId, string Patronomyc, CancellationToken cancellationToken)
+    {
+        using (var db = new AppointmentContext())
+        {
+            db.Profiles.First(p => p.Id == profileId).Patronomyc = Patronomyc;
+            db.SaveChanges();
+            return Task.CompletedTask;
+        }
+    }
+
+    public Task ChangeEmail(Guid profileId, string Email, CancellationToken cancellationToken)
+    {
+        using (var db = new AppointmentContext())
+        {
+            db.Profiles.First(p => p.Id == profileId).Email = Email;
+            db.SaveChanges();
+            return Task.CompletedTask;
+        }
+    }
+
+    public Task ChangeBirthdate(Guid profileId, DateTime Birthdate, CancellationToken cancellationToken)
+    {
+        using (var db = new AppointmentContext())
+        {
+            db.Profiles.First(p => p.Id == profileId).Birthdate = Birthdate;
+            db.SaveChanges();
+            return Task.CompletedTask;
+        }
+    }
+
+    public Task<bool> ValidateProfile(Guid profileId, CancellationToken cancellationToken)
+    {
+        using (var db = new AppointmentContext())
+        {
+            var profile = db.Profiles.First(p => p.Id == profileId);
+            if (profile.OMS != null &&
+                profile.Surname != null &&
+                profile.Name != null &&
+                profile.Birthdate != null &&
+                profile.Email != null)
+            {
+                profile.IsFilled = true;
+                db.SaveChanges();
+                return Task.FromResult(true);
+            }
+            return Task.FromResult(false);
         }
     }
 }
