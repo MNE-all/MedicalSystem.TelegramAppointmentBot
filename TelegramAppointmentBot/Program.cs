@@ -7,6 +7,8 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using TelegramAppointmentBot;
 using TelegramAppointmentBot.Context.Enums;
+using TelegramAppointmentBot.Context.Models;
+using TelegramAppointmentBot.Context.Models.Response;
 using TelegramAppointmentBot.Service.Contract.Interfaces;
 using TelegramAppointmentBot.Service.Implementation;
 using User = TelegramAppointmentBot.Context.Models.User;
@@ -16,6 +18,9 @@ class Program
     private static IUserService UserService = new UserService();
 
     private static IProfileService ProfileService = new ProfileService();
+
+    private static IGorzdravService GorzdravService = new GorzdravService();
+
     // Это клиент для работы с Telegram Bot API, который позволяет отправлять сообщения, управлять ботом, подписываться на обновления и многое другое.
     private static ITelegramBotClient _botClient;
 
@@ -118,10 +123,11 @@ class Program
                                 break;
 
                             case "Профили":
+                                await UserService.ClearCurrentProfile(user!.Id, cancellationToken);
+                                await UserService.ChangeStatement(user!.Id, ProfileStatement.None, cancellationToken);
+
                                 var profiles = await ProfileService.GetUserProfilesAsync(user.Id, cancellationToken);
 
-                                await UserService.ChangeStatement(user!.Id, ProfileStatement.None, cancellationToken);
-                                await UserService.ClearCurrentProfile(user!.Id, cancellationToken);
 
                                 var buttons = new List<InlineKeyboardButton[]>();
                                 foreach (var profile in profiles)
@@ -129,12 +135,12 @@ class Program
                                     buttons.Add(new[]
                                     {
                                     InlineKeyboardButton.WithCallbackData(profile.Title, profile.Id.ToString())
-                                });
+                                    });
                                 }
                                 buttons.Add(new[]
                                 {
                                 InlineKeyboardButton.WithCallbackData("Добавить профиль", "Add")
-                            });
+                                });
                                 // Тут создаем нашу клавиатуру
                                 var inlineKeyboard = new InlineKeyboardMarkup(buttons);
 
@@ -142,6 +148,31 @@ class Program
                                     user.Id,
                                     "Добавьте или измените профиль",
                                     replyMarkup: inlineKeyboard); // Все клавиатуры передаются в параметр replyMarkup
+                                break;
+
+                            case "Запись":
+                                await UserService.ClearCurrentProfile(user!.Id, cancellationToken);
+                                await UserService.ChangeStatement(user!.Id, ProfileStatement.None, cancellationToken);
+
+                                profiles = await ProfileService.GetUserProfilesAsync(user.Id, cancellationToken);
+
+
+                                buttons = new List<InlineKeyboardButton[]>();
+                                foreach (var profile in profiles)
+                                {
+                                    buttons.Add(new[]
+                                    {
+                                    InlineKeyboardButton.WithCallbackData(profile.Title, InlineMode.AppointmentProfileId.ToString() + " " + profile.Id.ToString())
+                                    });
+                                }
+                                inlineKeyboard = new InlineKeyboardMarkup(buttons);
+
+                                await botClient.SendTextMessageAsync(
+                                    user.Id,
+                                    "Выберите кого хотите записать:",
+                                    replyMarkup: inlineKeyboard); // Все клавиатуры передаются в параметр replyMarkup
+                                break;
+
                                 break;
 
                             default:
@@ -221,48 +252,121 @@ class Program
                         // кнопка привязана к сообщению, то мы берем информацию от сообщения.
                         var chat = callbackQuery.Message.Chat;
 
-                        // Добавляем блок switch для проверки кнопок
-                        switch (callbackQuery.Data)
+                        if (callbackQuery.Data == "Add")
                         {
-                            // Data - это придуманный нами id кнопки, мы его указывали в параметре
-                            // callbackData при создании кнопок. У меня это button1, button2 и button3
+                            await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
+                            UserService.ChangeStatement(user.Id, ProfileStatement.AddTitle, cancellationToken);
 
-                            case "Add":
-                                {
-                                    // В этом типе клавиатуры обязательно нужно использовать следующий метод
-                                    //await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
-                                    // Для того, чтобы отправить телеграмму запрос, что мы нажали на кнопку
-
-                                    UserService.ChangeStatement(user.Id, ProfileStatement.AddTitle, cancellationToken);
-
-                                    await botClient.SendTextMessageAsync(
-                                        chat.Id,
-                                        $"Введите название профиля");
-                                    return;
-                                }
-
-                            case "button2":
-                                {
-                                    // А здесь мы добавляем наш сообственный текст, который заменит слово "загрузка", когда мы нажмем на кнопку
-                                    await botClient.AnswerCallbackQueryAsync(callbackQuery.Id, "Тут может быть ваш текст!");
-
-                                    await botClient.SendTextMessageAsync(
-                                        chat.Id,
-                                        $"Вы нажали на {callbackQuery.Data}");
-                                    return;
-                                }
-
-                            case "button3":
-                                {
-                                    // А тут мы добавили еще showAlert, чтобы отобразить пользователю полноценное окно
-                                    await botClient.AnswerCallbackQueryAsync(callbackQuery.Id, "А это полноэкранный текст!", showAlert: true);
-
-                                    await botClient.SendTextMessageAsync(
-                                        chat.Id,
-                                        $"Вы нажали на {callbackQuery.Data}");
-                                    return;
-                                }
+                            await botClient.SendTextMessageAsync(
+                                chat.Id,
+                                $"Введите название профиля");
+                            return;
                         }
+
+                        if (callbackQuery.Data!.Split(" ").Length > 1)
+                        {
+                            var list = callbackQuery.Data!.Split(" ");
+                            // Добавляем блок switch для проверки кнопок
+                            switch (list[0])
+                            {
+                                case "AppointmentProfileId":
+                                    {
+                                        // А здесь мы добавляем наш сообственный текст, который заменит слово "загрузка", когда мы нажмем на кнопку
+                                        await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
+                                        var LPUsList = await GorzdravService.GetLPUs(Guid.Parse(list[1]), cancellationToken);
+
+                                        var buttons = new List<InlineKeyboardButton[]>();
+                                        foreach (var lpu in LPUsList)
+                                        {
+                                            buttons.Add(new[]
+                                            {
+                                                InlineKeyboardButton.WithCallbackData(lpu.lpuFullName, InlineMode.AppointmentLPUs.ToString() + " " + lpu.id.ToString())
+                                            });
+                                        }
+                                        var inlineKeyboard = new InlineKeyboardMarkup(buttons);
+
+                                        await botClient.SendTextMessageAsync(
+                                            chat.Id,
+                                            $"Выберите медицинское учереждение:",
+                                            replyMarkup: inlineKeyboard);
+                                        return;
+                                    }
+
+                                case "AppointmentLPUs":
+                                    {
+                                        var specs = await GorzdravService.GetSpecialties(int.Parse(list[1]), cancellationToken);
+                                        // А тут мы добавили еще showAlert, чтобы отобразить пользователю полноценное окно
+                                        await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
+
+                                        var buttons = new List<InlineKeyboardButton[]>();
+                                        foreach (var specialty in specs)
+                                        {
+                                            buttons.Add(new[]
+                                            {
+                                                InlineKeyboardButton.WithCallbackData(specialty.name, InlineMode.AppointmentSpecialities.ToString() + " " + list[1] + " " +specialty.id.ToString())
+                                            });
+                                        }
+                                        var inlineKeyboard = new InlineKeyboardMarkup(buttons);
+
+
+                                        await botClient.SendTextMessageAsync(
+                                            chat.Id,
+                                            $"Выберите направление:",
+                                            replyMarkup: inlineKeyboard);
+                                        return;
+                                    }
+                                case "AppointmentSpecialities":
+                                    {
+                                        var doctors = await GorzdravService.GetDoctors(int.Parse(list[1]), int.Parse(list[2]), cancellationToken);
+                                        // А тут мы добавили еще showAlert, чтобы отобразить пользователю полноценное окно
+                                        await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
+
+                                        var buttons = new List<InlineKeyboardButton[]>();
+                                        foreach (var doctor in doctors)
+                                        {
+                                            buttons.Add(new[]
+                                            {
+                                                InlineKeyboardButton.WithCallbackData(doctor.name, InlineMode.AppointmentDoctor.ToString() + " " + list[1] + " " + doctor.id.ToString())
+                                            });
+                                        }
+                                        var inlineKeyboard = new InlineKeyboardMarkup(buttons);
+
+
+                                        await botClient.SendTextMessageAsync(
+                                            chat.Id,
+                                            $"Выберите врача:",
+                                            replyMarkup: inlineKeyboard);
+                                        return;
+                                    }
+                                case "AppointmentDoctor":
+                                    {
+                                        var timetable = await GorzdravService.GetTimetable(int.Parse(list[1]), int.Parse(list[2]), cancellationToken);
+                                        // А тут мы добавили еще showAlert, чтобы отобразить пользователю полноценное окно
+                                        await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
+
+                                        var buttons = new List<InlineKeyboardButton[]>();
+                                        if (timetable.result != null)
+                                        {
+                                            foreach (var doctor in timetable.result)
+                                            {
+                                                buttons.Add(new[]
+                                                {
+                                                    InlineKeyboardButton.WithCallbackData(doctor.visitStart.ToString("f") + " - " + doctor.visitEnd.ToString("t"), 
+                                                    InlineMode.AppointmentDoctor.ToString() + " " + list[1] + " " + list[2])
+                                                });
+                                            }
+                                        }
+                                        var inlineKeyboard = new InlineKeyboardMarkup(buttons);
+
+                                        await botClient.SendTextMessageAsync(
+                                        chat.Id,
+                                            timetable.result.First().visitStart.ToString() + " - " + timetable.result.First().visitEnd.ToString(),
+                                            replyMarkup: inlineKeyboard);
+                                        return;
+                                    }
+                            }
+                        }
+                        
 
                         return;
                     }

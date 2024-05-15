@@ -12,7 +12,7 @@ public class LPUResult
     public string lpuShortName { get; set; }
     public string lpuType { get; set; }
     public string? oid { get; set; }
-    public int partOf { get; set; }
+    public int? partOf { get; set; }
     public Guid headOrganization { get; set; }
     public Guid organization { get; set; }
     public string address { get; set; }

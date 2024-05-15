@@ -7,7 +7,7 @@ namespace TelegramAppointmentBot.Service.Implementation;
 
 public class UserService : IUserService
 {
-    public Task ChangeCurrentProfile(long userId, Guid profileId, CancellationToken cancellationToken)
+    Task IUserService.ChangeCurrentProfile(long userId, Guid profileId, CancellationToken cancellationToken)
     {
         using (var db = new AppointmentContext())
         {
@@ -17,7 +17,7 @@ public class UserService : IUserService
         }
     }
 
-    public Task ClearCurrentProfile(long userId, CancellationToken cancellationToken)
+    Task IUserService.ClearCurrentProfile(long userId, CancellationToken cancellationToken)
     {
         using (var db = new AppointmentContext())
         {
@@ -27,7 +27,7 @@ public class UserService : IUserService
         }
     }
 
-    public Task<Guid> GetCurrentProfile(long userId, CancellationToken cancellationToken)
+    Task<Guid> IUserService.GetCurrentProfile(long userId, CancellationToken cancellationToken)
     {
         using (var db = new AppointmentContext())
         {
