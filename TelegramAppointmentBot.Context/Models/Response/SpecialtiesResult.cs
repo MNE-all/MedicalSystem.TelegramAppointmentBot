@@ -7,7 +7,7 @@
         public string name { get; set; }
         public int countFreeParticipant { get; set; }
         public int countFreeTicket { get; set; }
-        public DateTime lastDate { get; set; }
-        public DateTime nearestDate { get; set; }
+        public DateTime? lastDate { get; set; }
+        public DateTime? nearestDate { get; set; }
     }
 }

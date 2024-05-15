@@ -23,6 +23,7 @@ public class GorzdravService : IGorzdravService
         using (var request = new HttpRequestMessage(new HttpMethod("GET"), $"https://gorzdrav.spb.ru/_api/api/v2/schedule/lpu/{lpuId}/speciality/{specialtyId}/doctors"))
         {
             var response = httpClient.SendAsync(request, cancellationToken).Result;
+            Console.WriteLine(await response.Content.ReadAsStringAsync());
             var responseBody = await response.Content.ReadFromJsonAsync<GetDoctor>(cancellationToken: cancellationToken);
             result.AddRange(responseBody!.result);
         }

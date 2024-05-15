@@ -13,8 +13,8 @@ public class LPUResult
     public string lpuType { get; set; }
     public string? oid { get; set; }
     public int? partOf { get; set; }
-    public Guid headOrganization { get; set; }
-    public Guid organization { get; set; }
+    public Guid? headOrganization { get; set; }
+    public Guid? organization { get; set; }
     public string address { get; set; }
     public string phone { get; set; }
     public string email { get; set; }

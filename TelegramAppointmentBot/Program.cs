@@ -355,13 +355,14 @@ class Program
                                                     InlineMode.AppointmentDoctor.ToString() + " " + list[1] + " " + list[2])
                                                 });
                                             }
-                                        }
-                                        var inlineKeyboard = new InlineKeyboardMarkup(buttons);
+                                            var inlineKeyboard = new InlineKeyboardMarkup(buttons);
 
-                                        await botClient.SendTextMessageAsync(
-                                        chat.Id,
-                                            timetable.result.First().visitStart.ToString() + " - " + timetable.result.First().visitEnd.ToString(),
-                                            replyMarkup: inlineKeyboard);
+                                            await botClient.SendTextMessageAsync(
+                                            chat.Id,
+                                                "Расписание врача: ",
+                                                replyMarkup: inlineKeyboard);
+                                        }
+                                        
                                         return;
                                     }
                             }
