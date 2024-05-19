@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore.Query.Internal;
+using System.Globalization;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
@@ -347,11 +348,37 @@ class Program
                                         var buttons = new List<InlineKeyboardButton[]>();
                                         if (timetable.result != null)
                                         {
-                                            foreach (var doctor in timetable.result)
+
+                                            var days = new List<List<TimetableDayResult>>
+                                            {
+                                                timetable.result.Where(x => x.visitEnd.DayOfWeek == System.DayOfWeek.Monday).ToList(),
+                                                timetable.result.Where(x => x.visitEnd.DayOfWeek == System.DayOfWeek.Tuesday).ToList(),
+                                                timetable.result.Where(x => x.visitEnd.DayOfWeek == System.DayOfWeek.Wednesday).ToList(),
+                                                timetable.result.Where(x => x.visitEnd.DayOfWeek == System.DayOfWeek.Thursday).ToList(),
+                                                timetable.result.Where(x => x.visitEnd.DayOfWeek == System.DayOfWeek.Friday).ToList()
+                                            };
+                                            var daysNames = new List<string> { "Понедельник", "Вторник", "Среда", "Четверг", "Пятница" };
+
+                                            foreach (var day in days)
                                             {
                                                 buttons.Add(new[]
                                                 {
-                                                    InlineKeyboardButton.WithCallbackData(doctor.visitStart.ToString("f") + " - " + doctor.visitEnd.ToString("t"), 
+                                                    InlineKeyboardButton.WithCallbackData($"{daysNames[days.IndexOf(day)]}: " + new DateTime(day.Min(x => x.visitStart.TimeOfDay).Ticks).ToString("t") + 
+                                                    " - " + 
+                                                    new DateTime(day.Max(x => x.visitEnd.TimeOfDay).Ticks).ToString("t"),
+                                                    InlineMode.AppointmentDoctor.ToString() + " " + list[1] + " " + list[2])
+                                                });
+                                            }
+                                            
+
+
+                                            foreach (var timetableDay in timetable.result)
+                                            {   
+                                                buttons.Add(new[]
+                                                {
+                                                    InlineKeyboardButton.WithCallbackData(CultureInfo.CurrentCulture.DateTimeFormat.GetDayName(timetableDay.visitStart.DayOfWeek) + 
+                                                    ": " +
+                                                    timetableDay.visitStart.ToString("f") + " - " + timetableDay.visitEnd.ToString("t"), 
                                                     InlineMode.AppointmentDoctor.ToString() + " " + list[1] + " " + list[2])
                                                 });
                                             }
