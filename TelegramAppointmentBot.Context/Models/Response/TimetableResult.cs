@@ -7,7 +7,7 @@
         public DateTime visitEnd { get; set; }
         public string? address { get; set; }
         public int? number { get; set; }
-        public int room { get; set; }
+        public string room { get; set; }
 
     }
 }

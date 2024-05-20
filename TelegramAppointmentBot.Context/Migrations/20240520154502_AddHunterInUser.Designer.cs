@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TelegramAppointmentBot.Context;
 
@@ -11,9 +12,10 @@ using TelegramAppointmentBot.Context;
 namespace TelegramAppointmentBot.Context.Migrations
 {
     [DbContext(typeof(AppointmentContext))]
-    partial class AppointmentContextModelSnapshot : ModelSnapshot
+    [Migration("20240520154502_AddHunterInUser")]
+    partial class AddHunterInUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -42,9 +44,6 @@ namespace TelegramAppointmentBot.Context.Migrations
 
                     b.Property<Guid>("PatientId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Statement")
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 

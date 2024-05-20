@@ -27,11 +27,11 @@ public class UserService : IUserService
         }
     }
 
-    Task<Guid> IUserService.GetCurrentProfile(long userId, CancellationToken cancellationToken)
+    Task<Guid?> IUserService.GetCurrentProfile(long userId, CancellationToken cancellationToken)
     {
         using (var db = new AppointmentContext())
         {
-            return Task.FromResult(db.Users.First(x => x.Id == userId).CurrentProfile.GetValueOrDefault());
+            return Task.FromResult(db.Users.First(x => x.Id == userId).CurrentProfile);
         }
     }
 
@@ -84,6 +84,34 @@ public class UserService : IUserService
         {
             var _user = db.Users.First(u => u.Id == userId);
             return Task.FromResult(_user.Statement);
+        }
+    }
+
+    public Task ChangeCurrentHunter(long userId, Guid hunterId, CancellationToken cancellationToken)
+    {
+        using (var db = new AppointmentContext())
+        {
+            db.Users.First(x => x.Id == userId).CurrentHunter = hunterId;
+            db.SaveChanges();
+            return Task.CompletedTask;
+        }
+    }
+
+    public Task ClearCurrentHunter(long userId, CancellationToken cancellationToken)
+    {
+        using (var db = new AppointmentContext())
+        {
+            db.Users.First(x => x.Id == userId).CurrentHunter = null;
+            db.SaveChanges();
+            return Task.CompletedTask;
+        }
+    }
+
+    public Task<Guid?> GetCurrentHunter(long userId, CancellationToken cancellationToken)
+    {
+        using (var db = new AppointmentContext())
+        {
+            return Task.FromResult(db.Users.First(x => x.Id == userId).CurrentHunter);
         }
     }
 }

@@ -10,6 +10,10 @@ public interface IUserService
     Task<ProfileStatement> CheckStatement(long userId, CancellationToken cancellationToken);
     Task ChangeCurrentProfile(long userId, Guid profileId, CancellationToken cancellationToken);
     Task ClearCurrentProfile(long userId, CancellationToken cancellationToken);
-    Task<Guid> GetCurrentProfile(long userId, CancellationToken cancellationToken);
+    Task<Guid?> GetCurrentProfile(long userId, CancellationToken cancellationToken);
+
+    Task ChangeCurrentHunter(long userId, Guid hunterId, CancellationToken cancellationToken);
+    Task ClearCurrentHunter(long userId, CancellationToken cancellationToken);
+    Task<Guid?> GetCurrentHunter(long userId, CancellationToken cancellationToken);
 
 }

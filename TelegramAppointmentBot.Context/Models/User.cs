@@ -12,4 +12,5 @@ public class User
 
     public ProfileStatement Statement { get; set; } = ProfileStatement.None;
     public Guid? CurrentProfile { get; set; }
+    public Guid? CurrentHunter { get; set; }
 }

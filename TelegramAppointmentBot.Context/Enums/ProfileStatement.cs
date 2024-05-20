@@ -11,6 +11,7 @@
         AddEmail,
         AddBirthdate,
         Finished,
-        Canceled
+        Canceled,
+        AddTime
     }
 }
