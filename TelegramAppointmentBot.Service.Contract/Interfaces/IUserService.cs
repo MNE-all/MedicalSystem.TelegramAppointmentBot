@@ -16,4 +16,6 @@ public interface IUserService
     Task ClearCurrentHunter(long userId, CancellationToken cancellationToken);
     Task<Guid?> GetCurrentHunter(long userId, CancellationToken cancellationToken);
 
+    Task<long> GetTelegramId(Guid systemId, CancellationToken cancellationToken);
+
 }

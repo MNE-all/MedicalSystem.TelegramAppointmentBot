@@ -13,5 +13,7 @@ namespace TelegramAppointmentBot.Service.Contract.Interfaces
         Task ChangeStatement(Guid appointmentId, HunterStatement statement, CancellationToken cancellationToken);
         Task<HunterStatement> GetStatement(Guid appointmentId, CancellationToken cancellationToken);
         Task Delete(Guid appointmentId, CancellationToken cancellationToken);
+
+        Task<List<AppointmentHunter>> GetHuntersInProgress(CancellationToken cancellationToken);
     }
 }

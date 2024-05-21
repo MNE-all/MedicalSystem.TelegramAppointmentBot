@@ -1,4 +1,5 @@
-﻿using Telegram.Bot;
+﻿using System;
+using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
@@ -54,6 +55,14 @@ class Program
         var me = await _botClient.GetMeAsync(); // Создаем переменную, в которую помещаем информацию о нашем боте.
         Console.WriteLine($"{me.FirstName} запущен!");
 
+
+
+        // Запуск регулярной попытки создать запись
+        TimerCallback tm = new TimerCallback(TryToWrite);
+        Timer timer = new Timer(tm, null, 0, 1000 * 60 * 5);
+        //
+
+
         await Task.Delay(-1); // Устанавливаем бесконечную задержку, чтобы наш бот работал постоянно
     }
 
@@ -77,7 +86,6 @@ class Program
 
         try
         {
-
             switch (update.Type)
             {
                 case UpdateType.Message:
@@ -489,12 +497,63 @@ class Program
 
                         return;
                     }
-                    break;
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine(ex.ToString());
         }
+    }
+
+
+    public async static void TryToWrite(object? obj)
+    {
+        var cancellationToken = new CancellationToken();
+        var hunters = await AppointmentHunterService.GetHuntersInProgress(cancellationToken);
+
+        foreach (var hunter in hunters)
+        {
+            var appointments = await GorzdravService.GetAppointments(hunter.LpuId.Value, hunter.DoctorId.Value, cancellationToken);
+            if (appointments.result != null)
+            {
+                var list = appointments.result.Where(x => x.visitStart.DayOfWeek == hunter.DesiredDay).ToList();
+                if (list.Count > 0)
+                {
+                    var item = list.FirstOrDefault(x =>
+                    x.visitStart.TimeOfDay <= hunter.DesiredTime.Value.TimeOfDay &&
+                    x.visitEnd.TimeOfDay >= hunter.DesiredTime.Value.TimeOfDay);
+                    if (item != null)
+                    {
+                        var profile = await ProfileService.GetProfileByIdAsync(hunter.PatientId, cancellationToken);
+                        var user = await UserService.GetTelegramId(profile.OwnerId, cancellationToken);
+
+                        var patientId = (await GorzdravService.GetPatient(profile.Id, hunter.LpuId.Value, cancellationToken)).result;
+                        Console.WriteLine($"{item.id}");
+                        await GorzdravService.CreateAppointment(new TelegramAppointmentBot.Context.Models.Request.CreateAnAppointment
+                        {
+                            lpuId = hunter.LpuId.Value,
+                            patientId = patientId,
+                            patientFirstName = profile.Name,
+                            patientLastName = profile.Surname,
+                            patientMiddleName = profile.Patronomyc,
+                            patientBirthdate = profile.Birthdate.Value,
+                            recipientEmail = profile.Email,
+                            appointmentId = item.id,
+                            room = item.room,
+                            num = item.number,
+                            address = item.address
+                        }, cancellationToken);
+
+                        await AppointmentHunterService.ChangeStatement(hunter.Id, HunterStatement.Finished, cancellationToken);
+
+                        await _botClient.SendTextMessageAsync(user, "Вы записаны к врачу!");
+
+                    }
+                }
+            }
+        }
+
+        Console.WriteLine($"{DateTime.Now}");
+
     }
 }

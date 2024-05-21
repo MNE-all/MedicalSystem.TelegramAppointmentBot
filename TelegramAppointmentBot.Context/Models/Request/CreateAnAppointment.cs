@@ -16,7 +16,7 @@ public class CreateAnAppointment
     public string patientFirstName { get; set; }
     public string patientMiddleName { get; set; }
     public DateTime patientBirthdate { get; set; }
-    public int room { get; set; }
-    public int num { get; set; }
+    public string room { get; set; }
+    public int? num { get; set; }
     public string address { get; set; }
 }

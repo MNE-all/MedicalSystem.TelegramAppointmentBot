@@ -114,4 +114,12 @@ public class UserService : IUserService
             return Task.FromResult(db.Users.First(x => x.Id == userId).CurrentHunter);
         }
     }
+
+    public Task<long> GetTelegramId(Guid systemId, CancellationToken cancellationToken)
+    {
+        using (var db = new AppointmentContext())
+        {
+            return Task.FromResult(db.Users.First(x => x.SystemId == systemId).Id);
+        }
+    }
 }

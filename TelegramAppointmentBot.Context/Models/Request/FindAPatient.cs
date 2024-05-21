@@ -9,5 +9,5 @@ public class FindAPatient
     public string lastName { get; set; }
     public string firstName { get; set; }
     public string middleName { get; set; }
-    public DateTime birthdate { get; set; }
+    public string birthdate { get; set; }
 }
