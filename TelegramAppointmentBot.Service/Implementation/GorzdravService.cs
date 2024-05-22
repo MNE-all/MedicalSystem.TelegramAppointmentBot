@@ -25,6 +25,20 @@ public class GorzdravService : IGorzdravService
         }
     }
 
+    public async Task DeleteAppointment(CancelTheAppointment model, CancellationToken cancellationToken)
+    {
+        // TODO Создание записи
+        JsonContent content = JsonContent.Create(model);
+
+        using (var response = httpClient.PostAsync("https://gorzdrav.spb.ru/_api/api/v2/appointment/cancel", content))
+        {
+            var responseBody = await response.Result.Content.ReadAsStringAsync();
+            Console.WriteLine(responseBody);
+
+            return;
+        }
+    }
+
     public async Task<GetAppointments> GetAppointments(int lpuId, int doctorId, CancellationToken cancellationToken)
     {
         using (var request = new HttpRequestMessage(new HttpMethod("GET"), $"https://gorzdrav.spb.ru/_api/api/v2/schedule/lpu/{lpuId}/doctor/{doctorId}/appointments"))
@@ -115,6 +129,17 @@ public class GorzdravService : IGorzdravService
             var response = httpClient.SendAsync(request, cancellationToken).Result;
             var responseBody = await response.Content.ReadFromJsonAsync<GetTimetable>(cancellationToken: cancellationToken);
            
+            return responseBody!;
+        }
+    }
+
+    public async Task<GetVisits> GetVisits(string patientId, int lpuId, CancellationToken cancellationToken)
+    {
+        using (var request = new HttpRequestMessage(new HttpMethod("GET"), $"https://gorzdrav.spb.ru/_api/api/v2/appointments?lpuId={lpuId}&patientId={patientId}"))
+        {
+            var response = httpClient.SendAsync(request, cancellationToken).Result;
+            var responseBody = await response.Content.ReadFromJsonAsync<GetVisits>(cancellationToken: cancellationToken);
+
             return responseBody!;
         }
     }

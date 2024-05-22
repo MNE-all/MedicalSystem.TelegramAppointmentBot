@@ -7,6 +7,9 @@ public class AppointmentHunter
     public Guid Id { get; set; } = Guid.NewGuid();
     
     public Profile? Patient { get; set; }
+    /// <summary>
+    /// Id from Profile
+    /// </summary>
     public Guid PatientId { get; set; }
 
     public int? LpuId { get; set; }

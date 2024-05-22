@@ -2,6 +2,6 @@
 {
     public class GetPatient : GorzdravResponse
     {
-        public int result { get; set; }
+        public string result { get; set; }
     }
 }

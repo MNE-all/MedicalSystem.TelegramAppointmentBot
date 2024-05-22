@@ -63,6 +63,14 @@ namespace TelegramAppointmentBot.Service.Implementation
             }
         }
 
+        public Task<List<AppointmentHunter>> GetHuntersInProgressByProfileId(Guid profileId, CancellationToken cancellationToken)
+        {
+            using (var db = new AppointmentContext())
+            {
+                return Task.FromResult(db.Hunters.Where(x => x.PatientId == profileId && x.Statement == HunterStatement.InProgress).ToList());
+            }
+        }
+
         public Task<HunterStatement> GetStatement(Guid appointmentId, CancellationToken cancellationToken)
         {
             using (var db = new AppointmentContext())

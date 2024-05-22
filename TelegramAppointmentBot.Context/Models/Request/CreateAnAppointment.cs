@@ -7,7 +7,7 @@ public class CreateAnAppointment
 {
     public long esiaId { get; set; } = 000000000;
     public int lpuId { get; set; }
-    public int patientId { get; set; }
+    public string patientId { get; set; }
     public string appointmentId { get; set; }
     public string? referralId { get; set; }
     public Guid ipmpiCardId { get; set; } = Guid.Parse("1670097a-1d3b-4946-a7a1-a84d20f34550");

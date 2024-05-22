@@ -135,4 +135,14 @@ public class ProfileService : IProfileService
             return Task.FromResult(false);
         }
     }
+
+    public Task Delete(Guid profileId, CancellationToken cancellationToken)
+    {
+        using(var db = new AppointmentContext())
+        {
+            db.Profiles.Remove(db.Profiles.First(x => x.Id == profileId));
+            db.SaveChanges();
+            return Task.CompletedTask;
+        }
+    }
 }

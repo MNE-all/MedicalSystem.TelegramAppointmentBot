@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using TelegramAppointmentBot.Context.Models;
 using TelegramAppointmentBot.Context.Models.Request;
@@ -38,6 +39,8 @@ public interface IProfileService
     Task ChangeEmail(Guid profileId, string Email, CancellationToken cancellationToken);
     Task ChangeBirthdate(Guid profileId, DateTime Birthdate, CancellationToken cancellationToken);
     Task<bool> ValidateProfile(Guid profileId, CancellationToken cancellationToken);
+
+    Task Delete(Guid profileId, CancellationToken cancellationToken);
 
 
 

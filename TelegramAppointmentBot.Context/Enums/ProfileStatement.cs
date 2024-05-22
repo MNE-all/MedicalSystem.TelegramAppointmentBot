@@ -12,6 +12,13 @@
         AddBirthdate,
         Finished,
         Canceled,
-        AddTime
+        AddTime,
+        ChangeTitle,
+        ChangeOMS,
+        ChangeSurname,
+        ChangeName,
+        ChangePatronomyc,
+        ChangeEmail,
+        ChangeBirthdate,
     }
 }

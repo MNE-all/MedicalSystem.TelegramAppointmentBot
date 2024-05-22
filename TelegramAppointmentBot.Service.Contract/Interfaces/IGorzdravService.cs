@@ -14,4 +14,8 @@ public interface IGorzdravService
 
     Task<GetPatient> GetPatient(Guid profileId, int lpuId, CancellationToken cancellationToken);
 
+    Task<GetVisits> GetVisits(string patientId, int lpuId, CancellationToken cancellationToken);
+
+    Task DeleteAppointment(CancelTheAppointment model, CancellationToken cancellationToken);
+
 }

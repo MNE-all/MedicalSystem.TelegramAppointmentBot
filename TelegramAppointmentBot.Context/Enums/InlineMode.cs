@@ -12,6 +12,22 @@ namespace TelegramAppointmentBot.Context.Enums
         AppointmentLPUs,
         AppointmentDoctor,
         AppointmentDay,
-        AppointmentSpecialities
+        AppointmentSpecialities,
+        VisitsShow,
+        DeleteVisit,
+        ProfileInfo,
+        ChangeProfile,
+        DeleteProfile,
+
+        ChangeTitle,
+        ChangeOMS,
+        ChangeSurname,
+        ChangeName,
+        ChangePatronomyc,
+        ChangeEmail,
+        ChangeBirthdate,
+
+
+        HuntersShow
     }
 }
