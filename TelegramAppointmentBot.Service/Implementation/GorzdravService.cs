@@ -1,3 +1,4 @@
+using System;
 using System.Net.Http.Json;
 using TelegramAppointmentBot.Context;
 using TelegramAppointmentBot.Context.Models.Request;
@@ -11,19 +12,20 @@ public class GorzdravService : IGorzdravService
     private readonly IProfileService profileService = new ProfileService();
     private readonly HttpClient httpClient = new HttpClient();
 
-    public async Task CreateAppointment(CreateAnAppointment model, CancellationToken cancellationToken)
+    public async Task<GorzdravResponse> CreateAppointment(CreateAnAppointment model, CancellationToken cancellationToken)
     {
         // TODO Создание записи
         JsonContent content = JsonContent.Create(model);
 
-        using (var response = httpClient.PostAsync("https://gorzdrav.spb.ru/_api/api/v2/appointment/create", content))
+        using(var response = httpClient.PostAsync($"https://gorzdrav.spb.ru/_api/api/v2/appointment/create", content))
         {
-            var responseBody = await response.Result.Content.ReadAsStringAsync();
-            Console.WriteLine(responseBody);
+            var responseBody = await response.Result.Content.ReadFromJsonAsync<GorzdravResponse>(cancellationToken: cancellationToken);
 
-            return;
-        }
+            Console.WriteLine(responseBody.message);
+            return responseBody;
+        }        
     }
+    
 
     public async Task DeleteAppointment(CancelTheAppointment model, CancellationToken cancellationToken)
     {
@@ -135,12 +137,23 @@ public class GorzdravService : IGorzdravService
 
     public async Task<GetVisits> GetVisits(string patientId, int lpuId, CancellationToken cancellationToken)
     {
-        using (var request = new HttpRequestMessage(new HttpMethod("GET"), $"https://gorzdrav.spb.ru/_api/api/v2/appointments?lpuId={lpuId}&patientId={patientId}"))
-        {
-            var response = httpClient.SendAsync(request, cancellationToken).Result;
-            var responseBody = await response.Content.ReadFromJsonAsync<GetVisits>(cancellationToken: cancellationToken);
+        bool success = false;
+        GetVisits responseBody = new();
 
-            return responseBody!;
+        while (!success)
+        {
+            using (var request = new HttpRequestMessage(new HttpMethod("GET"), $"https://gorzdrav.spb.ru/_api/api/v2/appointments?lpuId={lpuId}&patientId={patientId}"))
+            {
+                {
+                    var response = httpClient.SendAsync(request, cancellationToken).Result;
+                    Console.WriteLine(await response.Content.ReadAsStringAsync());
+                    responseBody = await response.Content.ReadFromJsonAsync<GetVisits>(cancellationToken: cancellationToken);
+
+                    success = responseBody.success;
+                }
+            }
         }
+        return responseBody;
+
     }
 }

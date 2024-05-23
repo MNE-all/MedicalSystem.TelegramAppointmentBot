@@ -9,5 +9,6 @@
 
         public DayOfWeek? DesiredDay { get; set; }
         public DateTime? DesiredTime { get; set; }
+        public string SpecialityName { get; set;}
     }
 }

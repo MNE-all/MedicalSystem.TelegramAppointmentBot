@@ -1,4 +1,6 @@
-﻿using Telegram.Bot;
+﻿using System.Globalization;
+using System.Text;
+using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
@@ -158,7 +160,7 @@ class Program
                                 {
                                     buttons.Add(new[]
                                     {
-                                        InlineKeyboardButton.WithCallbackData(profile.Title, InlineMode.ProfileInfo + " " + profile.Id.ToString())
+                                        InlineKeyboardButton.WithCallbackData(profile.Title, (int)InlineMode.ProfileInfo + ";" + profile.Id.ToString())
                                     });
                                 }
                                 buttons.Add(new[]
@@ -361,10 +363,13 @@ class Program
                             {
                                 buttons.Add(new[]
                                 {
-                                    InlineKeyboardButton.WithCallbackData(profile.Title, InlineMode.AppointmentProfileId.ToString() + " " + profile.Id.ToString())
+                                    InlineKeyboardButton.WithCallbackData(profile.Title, (int)InlineMode.AppointmentProfileId + ";" + profile.Id.ToString())
                                 });
                             }
                             var inlineKeyboard = new InlineKeyboardMarkup(buttons);
+
+                            await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
+
 
                             await botClient.SendTextMessageAsync(
                                 user.Id,
@@ -379,7 +384,7 @@ class Program
                             {
                                 buttons.Add(new[]
                                 {
-                                    InlineKeyboardButton.WithCallbackData(profile.Title, InlineMode.VisitsShow.ToString() + " " + profile.Id.ToString())
+                                    InlineKeyboardButton.WithCallbackData(profile.Title, (int)InlineMode.VisitsShow + ";" + profile.Id.ToString())
                                 });
                             }
                             var inlineKeyboard = new InlineKeyboardMarkup(buttons);
@@ -399,7 +404,7 @@ class Program
                             {
                                 buttons.Add(new[]
                                 {
-                                    InlineKeyboardButton.WithCallbackData(profile.Title, InlineMode.HuntersShow.ToString() + " " + profile.Id.ToString())
+                                    InlineKeyboardButton.WithCallbackData(profile.Title, (int)InlineMode.HuntersShow + ";" + profile.Id.ToString())
                                 });
                             }
                             var inlineKeyboard = new InlineKeyboardMarkup(buttons);
@@ -412,13 +417,14 @@ class Program
                                 replyMarkup: inlineKeyboard);
                         }
 
-                        if (callbackQuery.Data!.Split(" ").Length > 1)
+                        if (callbackQuery.Data!.Split(";").Length > 1)
                         {
-                            var list = callbackQuery.Data!.Split(" ");
+                            var list = callbackQuery.Data!.Split(";");
+                            InlineMode type = (InlineMode)int.Parse(list[0]);
                             // Добавляем блок switch для проверки кнопок
-                            switch (list[0])
+                            switch (type)
                             {
-                                case "AppointmentProfileId":
+                                case InlineMode.AppointmentProfileId:
                                     {
                                         // А здесь мы добавляем наш сообственный текст, который заменит слово "загрузка", когда мы нажмем на кнопку
                                         await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
@@ -434,7 +440,7 @@ class Program
                                             {
                                                 buttons.Add(new[]
                                                 {
-                                                InlineKeyboardButton.WithCallbackData(lpu.lpuFullName, InlineMode.AppointmentLPUs.ToString() + " " + lpu.id.ToString())
+                                                InlineKeyboardButton.WithCallbackData(lpu.lpuFullName, (int)InlineMode.AppointmentLPUs + ";" + lpu.id.ToString())
                                             });
                                             }
                                             var inlineKeyboard = new InlineKeyboardMarkup(buttons);
@@ -453,18 +459,19 @@ class Program
                                         return;
                                     }
 
-                                case "AppointmentLPUs":
+                                case InlineMode.AppointmentLPUs:
                                     {
-                                        var specs = await GorzdravService.GetSpecialties(int.Parse(list[1]), cancellationToken);
-                                        // А тут мы добавили еще showAlert, чтобы отобразить пользователю полноценное окно
                                         await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
+
+                                        var specs = await GorzdravService.GetSpecialties(int.Parse(list[1]), cancellationToken);
 
                                         var buttons = new List<InlineKeyboardButton[]>();
                                         foreach (var specialty in specs)
                                         {
                                             buttons.Add(new[]
                                             {
-                                                InlineKeyboardButton.WithCallbackData(specialty.name, InlineMode.AppointmentSpecialities.ToString() + " " + list[1] + " " + specialty.id.ToString())
+                                                InlineKeyboardButton.WithCallbackData(specialty.name, (int)InlineMode.AppointmentSpecialities + ";" + list[1] + ";" + specialty.id.ToString() + 
+                                                ";" + specialty.name)
                                             });
                                         }
                                         var inlineKeyboard = new InlineKeyboardMarkup(buttons);
@@ -476,18 +483,19 @@ class Program
                                             replyMarkup: inlineKeyboard);
                                         return;
                                     }
-                                case "AppointmentSpecialities":
+                                case InlineMode.AppointmentSpecialities:
                                     {
+                                        await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
+
                                         var doctors = await GorzdravService.GetDoctors(int.Parse(list[1]), int.Parse(list[2]), cancellationToken);
                                         // А тут мы добавили еще showAlert, чтобы отобразить пользователю полноценное окно
-                                        await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
 
                                         var buttons = new List<InlineKeyboardButton[]>();
                                         foreach (var doctor in doctors)
                                         {
                                             buttons.Add(new[]
                                             {
-                                                InlineKeyboardButton.WithCallbackData(doctor.name, InlineMode.AppointmentDoctor.ToString() + " " + list[1] + " " + doctor.id.ToString())
+                                                InlineKeyboardButton.WithCallbackData(doctor.name, (int)InlineMode.AppointmentDoctor + ";" + list[1] + ";" + doctor.id.ToString() + ";" + list[3])
                                             });
                                         }
                                         var inlineKeyboard = new InlineKeyboardMarkup(buttons);
@@ -499,7 +507,7 @@ class Program
                                             replyMarkup: inlineKeyboard);
                                         return;
                                     }
-                                case "AppointmentDoctor":
+                                case InlineMode.AppointmentDoctor:
                                     {
                                         var timetable = await GorzdravService.GetTimetable(int.Parse(list[1]), int.Parse(list[2]), cancellationToken);
                                         // А тут мы добавили еще showAlert, чтобы отобразить пользователю полноценное окно
@@ -529,7 +537,7 @@ class Program
                                                         new DateTime(day.Min(x => x.visitStart.TimeOfDay).Ticks).ToString("t") +
                                                         " - " +
                                                         new DateTime(day.Max(x => x.visitEnd.TimeOfDay).Ticks).ToString("t"),
-                                                        InlineMode.AppointmentDay.ToString() + " " + list[1] + " " + list[2] + " " + day.First().visitStart.DayOfWeek.ToString())
+                                                        (int)InlineMode.AppointmentDay + ";" + list[1] + ";" + list[2] + ";" + (int)day.First().visitStart.DayOfWeek + ";" + list[3])
                                                     });
                                                 }
                                             }
@@ -544,7 +552,7 @@ class Program
                                         
                                         return;
                                     }
-                                case "AppointmentDay":
+                                case InlineMode.AppointmentDay:
                                     {
                                         var timetable = await GorzdravService.GetTimetable(int.Parse(list[1]), int.Parse(list[2]), cancellationToken);
                                         var patient = await UserService.GetCurrentProfile(user.Id, cancellationToken);
@@ -565,9 +573,11 @@ class Program
                                             "(в рамках: ";
                                         if (timetable.result != null)
                                         {
-                                            var times = timetable.result.Where(x => x.visitEnd.DayOfWeek.ToString() == list[3]).ToList();
+                                            var times = timetable.result.Where(x => x.visitEnd.DayOfWeek == (System.DayOfWeek)int.Parse(list[3])).ToList();
 
                                             //
+                                            var specialityName = list[4];
+
                                             var dayTime = times.First();
                                             var appointment = await AppointmentHunterService.Create(new TelegramAppointmentBot.Context.Models.Request.AppointmentHunterRequest
                                             {
@@ -575,6 +585,8 @@ class Program
                                                 LpuId = int.Parse(list[1]),
                                                 DoctorId = int.Parse(list[2]),
                                                 DesiredDay = dayTime.visitStart.DayOfWeek,
+                                                SpecialityName = specialityName
+
                                             }, cancellationToken);
 
                                             await UserService.ChangeCurrentHunter(user.Id, appointment.Id, cancellationToken);
@@ -601,7 +613,7 @@ class Program
                                         }
                                         return;
                                     }
-                                case "VisitsShow":
+                                case InlineMode.VisitsShow:
                                     var profileId = Guid.Parse(list[1]);
                                     var lpus = await GorzdravService.GetLPUs(profileId, cancellationToken);
                                     var profile = await ProfileService.GetProfileByIdAsync(profileId, cancellationToken);
@@ -609,15 +621,29 @@ class Program
                                     List<VisitResult> results = new List<VisitResult>();
                                     foreach(var lpu in lpus)
                                     {
-                                        var patientGet = await GorzdravService.GetPatient(profileId, lpu.id, cancellationToken);
-                                        var response = await GorzdravService.GetVisits(patientGet.result, lpu.id, cancellationToken);
-                                        results.AddRange(response.result);
+                                        bool success = false;
+                                        while(!success)
+                                        {
+                                            var patientGet = await GorzdravService.GetPatient(profileId, lpu.id, cancellationToken);
+                                            success = patientGet.success;
+                                            if (success)
+                                            {
+                                                var response = await GorzdravService.GetVisits(patientGet.result, lpu.id, cancellationToken);
+                                                if (response != null && response.result != null)
+                                                {
+                                                    results.AddRange(response.result);
+                                                }
+                                            }
+                                        }
+
+                                        
+                                        
                                     }
 
                                     foreach (var result in results)
                                     {
-                                        var button = InlineKeyboardButton.WithCallbackData("Отменить", InlineMode.DeleteVisit.ToString() + " " + 
-                                            result.appointmentId + " " + result.lpuId + " " + result.patientId);
+                                        var button = InlineKeyboardButton.WithCallbackData("Отменить", (int)InlineMode.DeleteVisit + ";" + 
+                                            result.appointmentId + ";" + result.lpuId + ";" + result.patientId);
                                         var inlineKeyboard = new InlineKeyboardMarkup(button);
 
                                         await botClient.SendTextMessageAsync(chat.Id, 
@@ -633,27 +659,40 @@ class Program
                                     }
                                     await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
                                     return;
-                                case "HuntersShow":
+                                case InlineMode.HuntersShow:
                                     profileId = Guid.Parse(list[1]);
-
+                                    
                                     var hunters = await AppointmentHunterService.GetHuntersInProgressByProfileId(profileId, cancellationToken);
-                                    /*
-                                    foreach(var hunter in hunters)
+
+                                    await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
+
+
+                                    foreach (var hunter in hunters)
                                     {
-                                        var button = InlineKeyboardButton.WithCallbackData("Отменить", "");
+                                        var button = InlineKeyboardButton.WithCallbackData("Отменить", (int)InlineMode.DeleteHunter + ";" + hunter.Id);
                                         var inlineKeyboard = new InlineKeyboardMarkup(button);
 
+                                        string dayOfWeek = CultureInfo.CurrentCulture.DateTimeFormat.GetDayName(hunter.DesiredDay.Value);
+
                                         await botClient.SendTextMessageAsync(chat.Id,
-                                            $"Пациент: {hunter.} {profile.Name}\n" +
-                                            $"{result.lpuShortName}\n" +
-                                            $"{result.specialityRendingConsultation.name}\n" +
-                                            $"{result.visitStart.ToString("f")}", replyMarkup: inlineKeyboard);
+                                            $"К кому: {hunter.SpecialityName}\n" +
+                                            $"Желаемое время: {hunter.DesiredTime.Value.ToString("t")}\n" +
+                                            $"Желаемый день недели: {char.ToUpper(dayOfWeek[0]) + dayOfWeek.Substring(1)}", replyMarkup: inlineKeyboard);
                                     }
-                                    */
-                                    
+                                    if (hunters.Count == 0)
+                                    {
+                                        await botClient.SendTextMessageAsync(chat.Id, "Запись к врачу не отслеживается");
+                                    }
+                                    return;
+                                case InlineMode.DeleteHunter:
+                                    await AppointmentHunterService.Delete(Guid.Parse(list[1]), cancellationToken);
+                                    await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
+                                    await botClient.SendTextMessageAsync(chat.Id, "Запись удалена!");
+
+
                                     return;
 
-                                case "DeleteVisit":
+                                case InlineMode.DeleteVisit:
 
                                     // TODO Можно сделать проверку ответа запроса
                                     await GorzdravService.DeleteAppointment(new TelegramAppointmentBot.Context.Models.Request.CancelTheAppointment
@@ -669,7 +708,7 @@ class Program
 
                                     return;
 
-                                case "ProfileInfo":
+                                case InlineMode.ProfileInfo:
                                     {
                                         profile = await ProfileService.GetProfileByIdAsync(Guid.Parse(list[1]), cancellationToken);
 
@@ -679,11 +718,11 @@ class Program
 
                                         buttons.Add(new[]
                                         {
-                                            InlineKeyboardButton.WithCallbackData("Изменить", InlineMode.ChangeProfile.ToString() + " " + list[1])
+                                            InlineKeyboardButton.WithCallbackData("Изменить", (int)InlineMode.ChangeProfile + ";" + list[1])
                                         });
                                         buttons.Add(new[]
                                         {
-                                            InlineKeyboardButton.WithCallbackData("Удалить", InlineMode.DeleteProfile.ToString() + " " + list[1])
+                                            InlineKeyboardButton.WithCallbackData("Удалить", (int)InlineMode.DeleteProfile + ";" + list[1])
                                         });
                                         var inlineKeyboard = new InlineKeyboardMarkup(buttons);
 
@@ -700,7 +739,7 @@ class Program
 
                                         return;
                                     }
-                                case "DeleteProfile":
+                                case InlineMode.DeleteProfile:
                                     {
                                         await ProfileService.Delete(Guid.Parse(list[1]), cancellationToken);
 
@@ -709,38 +748,39 @@ class Program
                                         await botClient.SendTextMessageAsync(user.Id, "Профиль удалён!");
                                         return;
                                     }
-                                case "ChangeProfile":
+                                case InlineMode.ChangeProfile:
                                     {
-                                        var buttons = new List<InlineKeyboardButton[]>();
-
-                                        buttons.Add(new[]
+                                        var buttons = new List<InlineKeyboardButton[]>
                                         {
-                                            InlineKeyboardButton.WithCallbackData("Название", InlineMode.ChangeTitle.ToString() + " " + list[1])
-                                        });
-                                        buttons.Add(new[]
+                                            new[]
                                         {
-                                            InlineKeyboardButton.WithCallbackData("ОМС", InlineMode.ChangeOMS.ToString() + " " + list[1])
-                                        });
-                                        buttons.Add(new[]
+                                            InlineKeyboardButton.WithCallbackData("Название", (int)InlineMode.ChangeTitle + ";" + list[1])
+                                        },
+                                            new[]
                                         {
-                                            InlineKeyboardButton.WithCallbackData("Фамилия", InlineMode.ChangeSurname.ToString() + " " + list[1])
-                                        });
-                                        buttons.Add(new[]
+                                            InlineKeyboardButton.WithCallbackData("ОМС", (int)InlineMode.ChangeOMS + ";" + list[1])
+                                        },
+                                            new[]
                                         {
-                                            InlineKeyboardButton.WithCallbackData("Имя", InlineMode.ChangeName.ToString() + " " + list[1])
-                                        });
-                                        buttons.Add(new[]
+                                            InlineKeyboardButton.WithCallbackData("Фамилия", (int)InlineMode.ChangeSurname + ";" + list[1])
+                                        },
+                                            new[]
                                         {
-                                            InlineKeyboardButton.WithCallbackData("Отчество", InlineMode.ChangePatronomyc.ToString() + " " + list[1])
-                                        });
-                                        buttons.Add(new[]
+                                            InlineKeyboardButton.WithCallbackData("Имя", (int)InlineMode.ChangeName + ";" + list[1])
+                                        },
+                                            new[]
                                         {
-                                            InlineKeyboardButton.WithCallbackData("Email", InlineMode.ChangeEmail.ToString() + " " + list[1])
-                                        });
-                                        buttons.Add(new[]
+                                            InlineKeyboardButton.WithCallbackData("Отчество", (int)InlineMode.ChangePatronomyc + ";" + list[1])
+                                        },
+                                            new[]
                                         {
-                                            InlineKeyboardButton.WithCallbackData("Дата рождения", InlineMode.ChangeBirthdate.ToString() + " " + list[1])
-                                        });
+                                            InlineKeyboardButton.WithCallbackData("Email", (int)InlineMode.ChangeEmail + ";" + list[1])
+                                        },
+                                            new[]
+                                        {
+                                            InlineKeyboardButton.WithCallbackData("Дата рождения", (int)InlineMode.ChangeBirthdate + ";" + list[1])
+                                        }
+                                        };
 
                                         var inlineKeyboard = new InlineKeyboardMarkup(buttons);
 
@@ -752,7 +792,7 @@ class Program
 
                                         return;
                                     }
-                                case "ChangeTitle":
+                                case InlineMode.ChangeTitle:
                                     {
                                         await UserService.ChangeStatement(user.Id, ProfileStatement.ChangeTitle, cancellationToken);
                                         await UserService.ChangeCurrentProfile(user.Id, Guid.Parse(list[1]), cancellationToken);
@@ -760,7 +800,7 @@ class Program
                                         await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
                                         return;
                                     }
-                                case "ChangeOMS":
+                                case InlineMode.ChangeOMS:
                                     {
                                         await UserService.ChangeStatement(user.Id, ProfileStatement.ChangeOMS, cancellationToken);
                                         await UserService.ChangeCurrentProfile(user.Id, Guid.Parse(list[1]), cancellationToken);
@@ -768,7 +808,7 @@ class Program
                                         await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
                                         return;
                                     }
-                                case "ChangeSurname":
+                                case InlineMode.ChangeSurname:
                                     {
                                         await UserService.ChangeStatement(user.Id, ProfileStatement.ChangeSurname, cancellationToken);
                                         await UserService.ChangeCurrentProfile(user.Id, Guid.Parse(list[1]), cancellationToken);
@@ -776,7 +816,7 @@ class Program
                                         await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
                                         return;
                                     }
-                                case "ChangeName":
+                                case InlineMode.ChangeName:
                                     {
                                         await UserService.ChangeStatement(user.Id, ProfileStatement.ChangeName, cancellationToken);
                                         await UserService.ChangeCurrentProfile(user.Id, Guid.Parse(list[1]), cancellationToken);
@@ -784,7 +824,7 @@ class Program
                                         await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
                                         return;
                                     }
-                                case "ChangePatronomyc":
+                                case InlineMode.ChangePatronomyc:
                                     {
                                         await UserService.ChangeStatement(user.Id, ProfileStatement.ChangePatronomyc, cancellationToken);
                                         await UserService.ChangeCurrentProfile(user.Id, Guid.Parse(list[1]), cancellationToken);
@@ -792,7 +832,7 @@ class Program
                                         await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
                                         return;
                                     }
-                                case "ChangeEmail":
+                                case InlineMode.ChangeEmail:
                                     {
                                         await UserService.ChangeStatement(user.Id, ProfileStatement.ChangeEmail, cancellationToken);
                                         await UserService.ChangeCurrentProfile(user.Id, Guid.Parse(list[1]), cancellationToken);
@@ -800,7 +840,7 @@ class Program
                                         await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
                                         return;
                                     }
-                                case "ChangeBirthdate":
+                                case InlineMode.ChangeBirthdate:
                                     {
                                         await UserService.ChangeStatement(user.Id, ProfileStatement.ChangeBirthdate, cancellationToken);
                                         await UserService.ChangeCurrentProfile(user.Id, Guid.Parse(list[1]), cancellationToken);
@@ -836,7 +876,7 @@ class Program
                 var list = appointments.result.Where(x => x.visitStart.DayOfWeek == hunter.DesiredDay).ToList();
                 if (list.Count > 0)
                 {
-                    var item = list.FirstOrDefault(x =>
+                    var item = list.LastOrDefault(x =>
                     x.visitStart.TimeOfDay <= hunter.DesiredTime.Value.TimeOfDay &&
                     x.visitEnd.TimeOfDay >= hunter.DesiredTime.Value.TimeOfDay);
                     if (item != null)
@@ -846,20 +886,26 @@ class Program
 
                         var patientId = (await GorzdravService.GetPatient(profile.Id, hunter.LpuId.Value, cancellationToken)).result;
                         Console.WriteLine($"{item.id}");
-                        await GorzdravService.CreateAppointment(new TelegramAppointmentBot.Context.Models.Request.CreateAnAppointment
+                        bool success = false;
+
+                        while(!success)
                         {
-                            lpuId = hunter.LpuId.Value,
-                            patientId = patientId,
-                            patientFirstName = profile.Name,
-                            patientLastName = profile.Surname,
-                            patientMiddleName = profile.Patronomyc,
-                            patientBirthdate = profile.Birthdate.Value,
-                            recipientEmail = profile.Email,
-                            appointmentId = item.id,
-                            room = item.room,
-                            num = item.number,
-                            address = item.address
-                        }, cancellationToken);
+                            var answer = await GorzdravService.CreateAppointment(new TelegramAppointmentBot.Context.Models.Request.CreateAnAppointment
+                            {
+                                lpuId = hunter.LpuId.Value,
+                                patientId = patientId,
+                                patientFirstName = profile.Name,
+                                patientLastName = profile.Surname,
+                                patientMiddleName = profile.Patronomyc,
+                                patientBirthdate = profile.Birthdate.Value,
+                                recipientEmail = profile.Email,
+                                appointmentId = item.id,
+                                room = item.room,
+                                num = item.number,
+                                address = item.address
+                            }, cancellationToken);
+                            success = answer.success;
+                        }
 
                         await AppointmentHunterService.ChangeStatement(hunter.Id, HunterStatement.Finished, cancellationToken);
 

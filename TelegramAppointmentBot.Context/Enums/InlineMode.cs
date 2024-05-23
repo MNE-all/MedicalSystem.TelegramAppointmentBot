@@ -28,6 +28,8 @@ namespace TelegramAppointmentBot.Context.Enums
         ChangeBirthdate,
 
 
-        HuntersShow
+        HuntersShow,
+
+        DeleteHunter
     }
 }

@@ -39,6 +39,7 @@ namespace TelegramAppointmentBot.Service.Implementation
                     DoctorId = requestModel.DoctorId,
                     DesiredDay = requestModel.DesiredDay,
                     DesiredTime = requestModel.DesiredTime,
+                    SpecialityName = requestModel.SpecialityName,
                 });
                 db.SaveChanges();
                 return Task.FromResult(result.Entity);
