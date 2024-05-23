@@ -8,6 +8,7 @@ public class AppointmentContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<Profile> Profiles { get; set; }
     public DbSet<AppointmentHunter> Hunters { get; set; }
+    public DbSet<Visit> Visits { get; set; }
 
     public AppointmentContext()
     {

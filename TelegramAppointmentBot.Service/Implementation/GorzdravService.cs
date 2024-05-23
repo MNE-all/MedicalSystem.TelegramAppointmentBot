@@ -32,12 +32,16 @@ public class GorzdravService : IGorzdravService
         // TODO Создание записи
         JsonContent content = JsonContent.Create(model);
 
-        using (var response = httpClient.PostAsync("https://gorzdrav.spb.ru/_api/api/v2/appointment/cancel", content))
+        bool success = false;
+        while (!success)
         {
-            var responseBody = await response.Result.Content.ReadAsStringAsync();
-            Console.WriteLine(responseBody);
-
-            return;
+            using (var response = httpClient.PostAsync("https://gorzdrav.spb.ru/_api/api/v2/appointment/cancel", content))
+            {
+                var responseBody = await response.Result.Content.ReadFromJsonAsync<GorzdravResponse>(cancellationToken: cancellationToken);
+                Console.WriteLine("DeleteAppointment: " + responseBody.message);
+                success = responseBody.success;
+                return;
+            }
         }
     }
 
@@ -55,12 +59,21 @@ public class GorzdravService : IGorzdravService
     public async Task<IEnumerable<DoctorResult>> GetDoctors(int lpuId, int specialtyId, CancellationToken cancellationToken)
     {
         var result = new List<DoctorResult>();
-        using (var request = new HttpRequestMessage(new HttpMethod("GET"), $"https://gorzdrav.spb.ru/_api/api/v2/schedule/lpu/{lpuId}/speciality/{specialtyId}/doctors"))
+        bool success = false;
+        while (!success)
         {
-            var response = httpClient.SendAsync(request, cancellationToken).Result;
-            Console.WriteLine(await response.Content.ReadAsStringAsync());
-            var responseBody = await response.Content.ReadFromJsonAsync<GetDoctor>(cancellationToken: cancellationToken);
-            result.AddRange(responseBody!.result);
+            using (var request = new HttpRequestMessage(new HttpMethod("GET"), $"https://gorzdrav.spb.ru/_api/api/v2/schedule/lpu/{lpuId}/speciality/{specialtyId}/doctors"))
+            {
+                var response = httpClient.SendAsync(request, cancellationToken).Result;
+                Console.WriteLine(await response.Content.ReadAsStringAsync());
+                var responseBody = await response.Content.ReadFromJsonAsync<GetDoctor>(cancellationToken: cancellationToken);
+
+                success = responseBody.success;
+                if(responseBody.result != null)
+                {
+                    result.AddRange(responseBody!.result);
+                }
+            }
         }
 
         return result;
@@ -95,18 +108,23 @@ public class GorzdravService : IGorzdravService
 
             };
 
-
+            bool success = false;
+            GetPatient responseBody = new();
             var link = $"https://gorzdrav.spb.ru/_api/api/v2/patient/search?lpuId={lpuId}&lastName={profile.Surname}&firstName={profile.Name}&middleName={profile.Patronomyc}&birthdate={profile.Birthdate.Value.ToString("s")}";
-            using (var request = new HttpRequestMessage(HttpMethod.Get, link))
+            while (!success)
             {
-                var response = httpClient.SendAsync(request, cancellationToken).Result;
+                using (var request = new HttpRequestMessage(HttpMethod.Get, link))
+                {
+                    var response = httpClient.SendAsync(request, cancellationToken).Result;
 
-                Console.WriteLine(await response.Content.ReadAsStringAsync());
+                    Console.WriteLine(await response.Content.ReadAsStringAsync());
 
-                var responseBody = await response.Content.ReadFromJsonAsync<GetPatient>(cancellationToken: cancellationToken);
+                    responseBody = await response.Content.ReadFromJsonAsync<GetPatient>(cancellationToken: cancellationToken);
 
-                return responseBody!;
+                    success = responseBody.success;
+                }
             }
+            return responseBody;
 
         }
     }
