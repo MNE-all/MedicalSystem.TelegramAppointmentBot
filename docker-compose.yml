@@ -7,9 +7,9 @@ services:
       context: .
       dockerfile: Dockerfile
     depends_on:
-      - db
-  db:
-    container_name: db
+      - appointmentDb
+  appointmentDb:
+    container_name: appointmentDb
     image: "mcr.microsoft.com/mssql/server"
     environment:
       MSSQL_SA_PASSWORD: "CJnEmigeG!@JLipcRy4&2MNv"
