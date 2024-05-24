@@ -1,0 +1,18 @@
+version: '3.4'
+
+services:
+  bot:
+    container_name: bot
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - db
+  db:
+    container_name: db
+    image: "mcr.microsoft.com/mssql/server"
+    environment:
+      MSSQL_SA_PASSWORD: "CJnEmigeG!@JLipcRy4&2MNv"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
