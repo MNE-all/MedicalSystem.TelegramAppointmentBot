@@ -12,7 +12,7 @@ public class AppointmentHunter
     /// </summary>
     public Guid PatientId { get; set; }
 
-    public int? LpuId { get; set; }
+    public int LpuId { get; set; }
     public int? DoctorId { get; set; }
     public System.DayOfWeek? DesiredDay { get; set; }
     public DateTime? DesiredTime { get; set; }

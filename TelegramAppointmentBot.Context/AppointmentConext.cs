@@ -9,6 +9,9 @@ public class AppointmentContext : DbContext
     public DbSet<Profile> Profiles { get; set; }
     public DbSet<AppointmentHunter> Hunters { get; set; }
     public DbSet<Visit> Visits { get; set; }
+    public DbSet<Speciality> Specialities { get; set; }
+
+
 
     public AppointmentContext()
     {

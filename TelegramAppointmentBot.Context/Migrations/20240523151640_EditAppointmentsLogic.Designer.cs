@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TelegramAppointmentBot.Context;
 
@@ -11,9 +12,10 @@ using TelegramAppointmentBot.Context;
 namespace TelegramAppointmentBot.Context.Migrations
 {
     [DbContext(typeof(AppointmentContext))]
-    partial class AppointmentContextModelSnapshot : ModelSnapshot
+    [Migration("20240523151640_EditAppointmentsLogic")]
+    partial class EditAppointmentsLogic
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -37,6 +39,9 @@ namespace TelegramAppointmentBot.Context.Migrations
                     b.Property<int?>("DoctorId")
                         .HasColumnType("int");
 
+                    b.Property<string>("DoctorName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("LpuId")
                         .HasColumnType("int");
 
@@ -44,7 +49,6 @@ namespace TelegramAppointmentBot.Context.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("SpecialityName")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Statement")
@@ -96,28 +100,6 @@ namespace TelegramAppointmentBot.Context.Migrations
                     b.HasIndex("OwnerId");
 
                     b.ToTable("Profiles");
-                });
-
-            modelBuilder.Entity("TelegramAppointmentBot.Context.Models.Speciality", b =>
-                {
-                    b.Property<Guid>("SystemId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("id")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("lpuId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("SystemId");
-
-                    b.ToTable("Specialities");
                 });
 
             modelBuilder.Entity("TelegramAppointmentBot.Context.Models.User", b =>
