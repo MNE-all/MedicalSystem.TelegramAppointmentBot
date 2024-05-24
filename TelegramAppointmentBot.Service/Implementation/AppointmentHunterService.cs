@@ -1,5 +1,7 @@
-﻿using TelegramAppointmentBot.Context;
+﻿using System;
+using TelegramAppointmentBot.Context;
 using TelegramAppointmentBot.Context.Enums;
+using TelegramAppointmentBot.Context.Migrations;
 using TelegramAppointmentBot.Context.Models;
 using TelegramAppointmentBot.Context.Models.Request;
 using TelegramAppointmentBot.Service.Contract.Interfaces;
@@ -8,6 +10,26 @@ namespace TelegramAppointmentBot.Service.Implementation
 {
     public class AppointmentHunterService : IAppointmentHunterService
     {
+        public Task ChangeDayOfWeek(Guid appointmentId, System.DayOfWeek dayOfWeek, CancellationToken cancellationToken)
+        {
+            using (var db = new AppointmentContext())
+            {
+                db.Hunters.First(x => x.Id == appointmentId).DesiredDay = dayOfWeek;
+                db.SaveChanges();
+                return Task.CompletedTask;
+            }
+        }
+
+        public Task ChangeDoctorId(Guid appointmentId, int doctorId, CancellationToken cancellationToken)
+        {
+            using (var db = new AppointmentContext())
+            {
+                db.Hunters.First(x => x.Id == appointmentId).DoctorId = doctorId;
+                db.SaveChanges();
+                return Task.CompletedTask;
+            }
+        }
+
         public Task ChangeStatement(Guid appointmentId, HunterStatement statement, CancellationToken cancellationToken)
         {
             using (var db = new AppointmentContext())
@@ -28,21 +50,18 @@ namespace TelegramAppointmentBot.Service.Implementation
             }
         }
 
-        public Task<AppointmentHunter> Create(AppointmentHunterRequest requestModel, CancellationToken cancellationToken)
+        public Task<Guid> Create(Guid patientId, int lpuId, string specialityName, CancellationToken cancellationToken)
         {
             using (var db = new AppointmentContext())
             {
                 var result = db.Hunters.Add(new AppointmentHunter
                 {
-                    LpuId = requestModel.LpuId,
-                    PatientId = requestModel.PatientId,
-                    DoctorId = requestModel.DoctorId,
-                    DesiredDay = requestModel.DesiredDay,
-                    DesiredTime = requestModel.DesiredTime,
-                    SpecialityName = requestModel.SpecialityName,
+                    LpuId = lpuId,
+                    PatientId = patientId,
+                    SpecialityName = specialityName,
                 });
                 db.SaveChanges();
-                return Task.FromResult(result.Entity);
+                return Task.FromResult(result.Entity.Id);
             }
         }
 
@@ -53,6 +72,14 @@ namespace TelegramAppointmentBot.Service.Implementation
                 db.Hunters.Remove(db.Hunters.First(x => x.Id.Equals(appointmentId)));
                 db.SaveChanges();
                 return Task.CompletedTask;
+            }
+        }
+
+        public Task<AppointmentHunter> GetHunterById(Guid appointmentId, CancellationToken cancellationToken)
+        {
+            using (var db = new AppointmentContext())
+            {
+                return Task.FromResult(db.Hunters.First(x => x.Id == appointmentId));
             }
         }
 

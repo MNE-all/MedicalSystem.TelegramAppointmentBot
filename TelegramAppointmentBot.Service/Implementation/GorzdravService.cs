@@ -56,7 +56,7 @@ public class GorzdravService : IGorzdravService
         }
     }
 
-    public async Task<IEnumerable<DoctorResult>> GetDoctors(int lpuId, int specialtyId, CancellationToken cancellationToken)
+    public async Task<IEnumerable<DoctorResult>> GetDoctors(int lpuId, string specialtyId, CancellationToken cancellationToken)
     {
         var result = new List<DoctorResult>();
         bool success = false;
