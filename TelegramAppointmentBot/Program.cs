@@ -741,6 +741,8 @@ class Program
                                             var getLpus = await GorzdravService.GetLPUs(profileId, cancellationToken);
                                             var profile = await ProfileService.GetProfileByIdAsync(profileId, cancellationToken);
 
+                                            //TODO Можно сделать разбивку по мед. учреждениям + поиск по всем
+
                                             List<VisitResult> results = new List<VisitResult>();
                                             if (getLpus.success)
                                             {
@@ -757,9 +759,13 @@ class Program
                                                     else
                                                     {
                                                         var response = await GorzdravService.GetVisits(patientGet.result, lpu.id, cancellationToken);
-                                                        if (response != null && response.result != null)
+                                                        if (response.success && response.result != null)
                                                         {
                                                             results.AddRange(response.result);
+                                                        }
+                                                        else
+                                                        {
+                                                            GorzdravError(chat.Id, response!.message!, response.errorCode, cancellationToken);
                                                         }
                                                     }
                                                 }
@@ -786,7 +792,8 @@ class Program
                                                     $"Пациент: {profile.Surname} {profile.Name}\n" +
                                                     $"{result.lpuShortName}\n" +
                                                     $"{result.specialityRendingConsultation.name}\n" +
-                                                    $"{result.visitStart.ToString("f")}", replyMarkup: inlineKeyboard);
+                                                    $"{result.visitStart.ToString("f")}\n" +
+                                                    $"", replyMarkup: inlineKeyboard);
                                             }
 
                                             if (results.Count == 0)

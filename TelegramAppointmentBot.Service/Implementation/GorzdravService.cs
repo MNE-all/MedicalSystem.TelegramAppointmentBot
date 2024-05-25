@@ -143,7 +143,7 @@ public class GorzdravService : IGorzdravService
                 }
             }
         }
-        return responseBody;
+        return responseBody!;
 
     }
 }
