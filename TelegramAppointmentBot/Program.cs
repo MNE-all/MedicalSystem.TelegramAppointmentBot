@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Telegram.Bot;
@@ -262,6 +263,30 @@ class Program
                                         case ProfileStatement.AddTime:
                                             hunter = await UserService.GetCurrentHunter(user.Id, cancellationToken);
 
+                                            replyKeyboard = new ReplyKeyboardMarkup(
+                                                    new List<KeyboardButton[]>()
+                                                    {
+                                                        new KeyboardButton[]
+                                                        {
+                                                            new KeyboardButton("Профили"),
+                                                            new KeyboardButton("Запись"),
+                                                        },
+                                                    })
+                                            {
+                                                // автоматическое изменение размера клавиатуры, если не стоит true,
+                                                // тогда клавиатура растягивается чуть ли не до луны,
+                                                // проверить можете сами
+                                                ResizeKeyboard = true,
+                                            };
+
+                                            if (message.Text! == "Любой")
+                                            {
+                                                await botClient.SendTextMessageAsync(user.Id, "Запись отслеживается", replyMarkup: replyKeyboard);
+                                                await AppointmentHunterService.ChangeStatement(hunter.Value, HunterStatement.InProgress, cancellationToken);
+                                                await ClearUserMemory(user, cancellationToken);
+                                                return;
+                                            }
+
                                             var userInput = message.Text!.Split('-');
 
                                             if (userInput.Length == 1)
@@ -269,7 +294,7 @@ class Program
                                                 if (DateTime.TryParse(message.Text!, out var date))
                                                 {
                                                     await AppointmentHunterService.ChangeTime(hunter.Value, date, cancellationToken);
-                                                    await botClient.SendTextMessageAsync(user.Id, "Запись отслеживается");
+                                                    await botClient.SendTextMessageAsync(user.Id, "Запись отслеживается", replyMarkup: replyKeyboard);
                                                     await AppointmentHunterService.ChangeStatement(hunter.Value, HunterStatement.InProgress, cancellationToken);
                                                     await ClearUserMemory(user, cancellationToken);
                                                     return;
@@ -280,7 +305,7 @@ class Program
                                                 if (DateTime.TryParse(userInput[0], out var dateFrom) && DateTime.TryParse(userInput[1], out var dateTo))
                                                 {
                                                     await AppointmentHunterService.ChangeTime(hunter.Value, dateFrom, dateTo, cancellationToken);
-                                                    await botClient.SendTextMessageAsync(user.Id, "Запись отслеживается");
+                                                    await botClient.SendTextMessageAsync(user.Id, "Запись отслеживается", replyMarkup: replyKeyboard);
                                                     await AppointmentHunterService.ChangeStatement(hunter.Value, HunterStatement.InProgress, cancellationToken);
                                                     await ClearUserMemory(user, cancellationToken);
                                                     return;
@@ -680,9 +705,24 @@ class Program
                                                             answer += "): ";
                                                         }
                                                     }
+                                                    
+                                                    var replyKeyboard = new ReplyKeyboardMarkup(
+                                                        new List<KeyboardButton[]>()
+                                                        {
+                                                            new KeyboardButton[]
+                                                            {
+                                                                new KeyboardButton("Любой")
+                                                            },
+                                                        })
+                                                    {
+                                                        // автоматическое изменение размера клавиатуры, если не стоит true,
+                                                        // тогда клавиатура растягивается чуть ли не до луны,
+                                                        // проверить можете сами
+                                                        ResizeKeyboard = true,
+                                                    };
 
                                                     await UserService.ChangeStatement(user.Id, ProfileStatement.AddTime, cancellationToken);
-                                                    await botClient.SendTextMessageAsync(chat.Id, answer);
+                                                    await botClient.SendTextMessageAsync(chat.Id, answer, replyMarkup: replyKeyboard);
                                                 }
                                             }
                                             else
@@ -778,7 +818,7 @@ class Program
                                                     dayOfWeek = CultureInfo.GetCultureInfo("ru-RU").DateTimeFormat.GetDayName(hunter.DesiredDay!.Value);
                                                 }
 
-                                                string desiredTime = "";
+                                                string desiredTime = "Любое";
 
                                                 if (hunter.DesiredTime != null)
                                                 {
@@ -1012,102 +1052,108 @@ class Program
 
     public async static void TryToWrite(object? obj)
     {
-        var cancellationToken = new CancellationToken();
-        var hunters = await AppointmentHunterService.GetHuntersInProgress(cancellationToken);
-
-        foreach (var hunter in hunters)
+        _ = Task.Run(async () =>
         {
-            bool appointmentsSuccess = false;
-            GetAppointments? appointments = null;
-            while (!appointmentsSuccess)
+            var cancellationToken = new CancellationToken();
+            var hunters = await AppointmentHunterService.GetHuntersInProgress(cancellationToken);
+
+            foreach (var hunter in hunters)
             {
-                appointments = await GorzdravService.GetAppointments(hunter.LpuId, hunter.DoctorId!.Value, cancellationToken);
-                appointmentsSuccess = appointments.success;
-            }
-
-            if (appointments != null && appointments.result != null)
-            {
-                List<TimetableResult> list = new();
-                if (hunter.DesiredDay != null)
+                bool appointmentsSuccess = false;
+                GetAppointments? appointments = null;
+                while (!appointmentsSuccess)
                 {
-                    list = appointments.result.Where(x => x.visitStart.DayOfWeek == hunter.DesiredDay).ToList();
+                    appointments = await GorzdravService.GetAppointments(hunter.LpuId, hunter.DoctorId!.Value, cancellationToken);
+                    appointmentsSuccess = appointments.success;
                 }
-                else
+
+                if (appointments != null && appointments.result != null)
                 {
-                    list = appointments.result;
-                }
-                
-                if (list.Count > 0)
-                {
-                    TimetableResult? item = null;
-                    if (hunter.DesiredTime != null)
+                    List<TimetableResult> list = new();
+                    if (hunter.DesiredDay != null)
                     {
-                        item = list.LastOrDefault(x =>
-                        x.visitStart.TimeOfDay <= hunter.DesiredTime.Value.TimeOfDay &&
-                        x.visitEnd.TimeOfDay >= hunter.DesiredTime.Value.TimeOfDay);
+                        list = appointments.result.Where(x => x.visitStart.DayOfWeek == hunter.DesiredDay).ToList();
                     }
-                    else if (hunter.DesiredTimeFrom != null && hunter.DesiredTimeTo != null)
+                    else
                     {
-                        item = list.FirstOrDefault(x =>
-                        x.visitStart.TimeOfDay >= hunter.DesiredTimeFrom!.Value.TimeOfDay &&
-                        x.visitStart.TimeOfDay <= hunter.DesiredTimeTo!.Value.TimeOfDay);
+                        list = appointments.result;
                     }
-                    
-                    if (item != null)
+
+                    if (list.Count > 0)
                     {
-                        var profile = await ProfileService.GetProfileByIdAsync(hunter.PatientId, cancellationToken);
-                        var user = await UserService.GetTelegramId(profile.OwnerId, cancellationToken);
-
-
-                        var patientId = (await GorzdravService.GetPatient(profile.Id, hunter.LpuId, cancellationToken)).result;
-
-                        int errorCode = 1;
-                        GetPatient? patient = null;
-                        while (errorCode == 1)
+                        TimetableResult? item = null;
+                        if (hunter.DesiredTime != null)
                         {
-                            patient = await GorzdravService.GetPatient(profile.Id, hunter.LpuId, cancellationToken);
-                            errorCode = patient.errorCode;
+                            item = list.LastOrDefault(x =>
+                            x.visitStart.TimeOfDay <= hunter.DesiredTime.Value.TimeOfDay &&
+                            x.visitEnd.TimeOfDay >= hunter.DesiredTime.Value.TimeOfDay);
                         }
-
-                        if (patient != null && errorCode == 0)
+                        else if (hunter.DesiredTimeFrom != null && hunter.DesiredTimeTo != null)
                         {
-                            Console.WriteLine($"{item.id}");
-                            bool success = false;
-
-                            while (!success)
-                            {
-                                var answer = await GorzdravService.CreateAppointment(new TelegramAppointmentBot.Context.Models.Request.CreateAnAppointment
-                                {
-                                    lpuId = hunter.LpuId,
-                                    patientId = patient.result,
-                                    patientFirstName = profile.Name!,
-                                    patientLastName = profile.Surname!,
-                                    patientMiddleName = profile.Patronomyc,
-                                    patientBirthdate = profile!.Birthdate!.Value,
-                                    recipientEmail = profile.Email!,
-                                    appointmentId = item.id,
-                                    room = item.room,
-                                    num = item.number,
-                                    address = item.address!
-                                }, cancellationToken);
-                                success = answer.success;
-                            }
-
-                            await AppointmentHunterService.ChangeStatement(hunter.Id, HunterStatement.Finished, cancellationToken);
-
-                            await _botClient.SendTextMessageAsync(user, "Вы записаны к врачу!");
+                            item = list.FirstOrDefault(x =>
+                            x.visitStart.TimeOfDay >= hunter.DesiredTimeFrom!.Value.TimeOfDay &&
+                            x.visitStart.TimeOfDay <= hunter.DesiredTimeTo!.Value.TimeOfDay);
                         }
                         else
                         {
-                            await _botClient.SendTextMessageAsync(user, "Горздрав: " + patient!.message);
+                            item = list.FirstOrDefault();
+                        }
+
+                        if (item != null)
+                        {
+                            var profile = await ProfileService.GetProfileByIdAsync(hunter.PatientId, cancellationToken);
+                            var user = await UserService.GetTelegramId(profile.OwnerId, cancellationToken);
+
+
+                            var patientId = (await GorzdravService.GetPatient(profile.Id, hunter.LpuId, cancellationToken)).result;
+
+                            int errorCode = 1;
+                            GetPatient? patient = null;
+                            while (errorCode == 1)
+                            {
+                                patient = await GorzdravService.GetPatient(profile.Id, hunter.LpuId, cancellationToken);
+                                errorCode = patient.errorCode;
+                            }
+
+                            if (patient != null && errorCode == 0)
+                            {
+                                Console.WriteLine($"{item.id}");
+                                bool success = false;
+
+                                while (!success)
+                                {
+                                    var answer = await GorzdravService.CreateAppointment(new TelegramAppointmentBot.Context.Models.Request.CreateAnAppointment
+                                    {
+                                        lpuId = hunter.LpuId,
+                                        patientId = patient.result,
+                                        patientFirstName = profile.Name!,
+                                        patientLastName = profile.Surname!,
+                                        patientMiddleName = profile.Patronomyc,
+                                        patientBirthdate = profile!.Birthdate!.Value,
+                                        recipientEmail = profile.Email!,
+                                        appointmentId = item.id,
+                                        room = item.room,
+                                        num = item.number,
+                                        address = item.address!
+                                    }, cancellationToken);
+                                    success = answer.success;
+                                }
+
+                                await AppointmentHunterService.ChangeStatement(hunter.Id, HunterStatement.Finished, cancellationToken);
+
+                                await _botClient.SendTextMessageAsync(user, "Вы записаны к врачу!");
+                            }
+                            else
+                            {
+                                await _botClient.SendTextMessageAsync(user, "Горздрав: " + patient!.message);
+                            }
                         }
                     }
                 }
             }
-        }
-        
-        Console.WriteLine($"{DateTime.Now}");
 
+            Console.WriteLine($"{DateTime.Now}");
+        });
     }
 
     private static async void GorzdravError(long chatId, string message, int errorCode, CancellationToken cancellationToken)
