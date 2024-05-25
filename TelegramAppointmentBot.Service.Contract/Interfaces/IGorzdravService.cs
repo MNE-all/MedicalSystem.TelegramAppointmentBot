@@ -5,9 +5,9 @@ namespace TelegramAppointmentBot.Service.Contract.Interfaces;
 
 public interface IGorzdravService
 {
-    Task<IEnumerable<LPUResult>> GetLPUs(Guid profileId, CancellationToken cancellationToken);
+    Task<GetLPUsByOMS> GetLPUs(Guid profileId, CancellationToken cancellationToken);
     Task<GetSpecialties> GetSpecialties(int lpuId, CancellationToken cancellationToken);
-    Task<IEnumerable<DoctorResult>> GetDoctors(int lpuId, string specialityId, CancellationToken cancellationToken);
+    Task<GetDoctor> GetDoctors(int lpuId, string specialityId, CancellationToken cancellationToken);
     Task<GorzdravResponse> CreateAppointment(CreateAnAppointment model, CancellationToken cancellationToken);
     Task<GetTimetable> GetTimetable(int lpuId, int doctorId, CancellationToken cancellationToken);
     Task<GetAppointments> GetAppointments(int lpuId, int doctorId, CancellationToken cancellationToken);

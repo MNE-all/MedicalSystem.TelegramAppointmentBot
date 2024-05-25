@@ -51,41 +51,27 @@ public class GorzdravService : IGorzdravService
         }
     }
 
-    public async Task<IEnumerable<DoctorResult>> GetDoctors(int lpuId, string specialtyId, CancellationToken cancellationToken)
+    public async Task<GetDoctor> GetDoctors(int lpuId, string specialtyId, CancellationToken cancellationToken)
     {
-        var result = new List<DoctorResult>();
-        bool success = false;
-        while (!success)
+        using (var request = new HttpRequestMessage(new HttpMethod("GET"), $"https://gorzdrav.spb.ru/_api/api/v2/schedule/lpu/{lpuId}/speciality/{specialtyId}/doctors"))
         {
-            using (var request = new HttpRequestMessage(new HttpMethod("GET"), $"https://gorzdrav.spb.ru/_api/api/v2/schedule/lpu/{lpuId}/speciality/{specialtyId}/doctors"))
-            {
-                var response = httpClient.SendAsync(request, cancellationToken).Result;
-                Console.WriteLine(await response.Content.ReadAsStringAsync());
-                var responseBody = await response.Content.ReadFromJsonAsync<GetDoctor>(cancellationToken: cancellationToken);
+            var response = httpClient.SendAsync(request, cancellationToken).Result;
+            Console.WriteLine(await response.Content.ReadAsStringAsync());
+            var responseBody = await response.Content.ReadFromJsonAsync<GetDoctor>(cancellationToken: cancellationToken);
 
-                success = responseBody.success;
-                if(responseBody.result != null)
-                {
-                    result.AddRange(responseBody!.result);
-                }
-            }
+            return responseBody!;
         }
-
-        return result;
     }
 
-    public async Task<IEnumerable<LPUResult>> GetLPUs(Guid profileId, CancellationToken cancellationToken)
+    public async Task<GetLPUsByOMS> GetLPUs(Guid profileId, CancellationToken cancellationToken)
     {
-        var result = new List<LPUResult>();
         var profile = await profileService.GetProfileByIdAsync(profileId, cancellationToken);
         using (var request = new HttpRequestMessage(new HttpMethod("GET"), $"https://gorzdrav.spb.ru/_api/api/v2/oms/attachment/lpus?polisN={profile.OMS}"))
         {
             var response = httpClient.SendAsync(request, cancellationToken).Result;
             var responseBody = await response.Content.ReadFromJsonAsync<GetLPUsByOMS>(cancellationToken: cancellationToken);
-            result.AddRange(responseBody!.result);
-        }
-
-        return result;
+            return responseBody!;
+        }        
     }
 
     public async Task<GetPatient> GetPatient(Guid profileId, int lpuId, CancellationToken cancellationToken)
@@ -141,10 +127,10 @@ public class GorzdravService : IGorzdravService
 
     public async Task<GetVisits> GetVisits(string patientId, int lpuId, CancellationToken cancellationToken)
     {
-        bool success = false;
+        int errorCode = 1;
         GetVisits responseBody = new();
 
-        while (!success)
+        while (errorCode == 1)
         {
             using (var request = new HttpRequestMessage(new HttpMethod("GET"), $"https://gorzdrav.spb.ru/_api/api/v2/appointments?lpuId={lpuId}&patientId={patientId}"))
             {
@@ -153,7 +139,7 @@ public class GorzdravService : IGorzdravService
                     Console.WriteLine(await response.Content.ReadAsStringAsync());
                     responseBody = await response.Content.ReadFromJsonAsync<GetVisits>(cancellationToken: cancellationToken);
 
-                    success = responseBody.success;
+                    errorCode = responseBody!.errorCode;
                 }
             }
         }

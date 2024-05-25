@@ -10,7 +10,7 @@ namespace TelegramAppointmentBot.Service.Implementation
 {
     public class AppointmentHunterService : IAppointmentHunterService
     {
-        public Task ChangeDayOfWeek(Guid appointmentId, System.DayOfWeek dayOfWeek, CancellationToken cancellationToken)
+        public Task ChangeDayOfWeek(Guid appointmentId, System.DayOfWeek? dayOfWeek, CancellationToken cancellationToken)
         {
             using (var db = new AppointmentContext())
             {
@@ -20,15 +20,6 @@ namespace TelegramAppointmentBot.Service.Implementation
             }
         }
 
-        public Task ChangeDoctorId(Guid appointmentId, int doctorId, CancellationToken cancellationToken)
-        {
-            using (var db = new AppointmentContext())
-            {
-                db.Hunters.First(x => x.Id == appointmentId).DoctorId = doctorId;
-                db.SaveChanges();
-                return Task.CompletedTask;
-            }
-        }
 
         public Task ChangeStatement(Guid appointmentId, HunterStatement statement, CancellationToken cancellationToken)
         {
@@ -45,6 +36,18 @@ namespace TelegramAppointmentBot.Service.Implementation
             using (var db = new AppointmentContext())
             {
                 db.Hunters.First(x => x.Id == appointmentId).DesiredTime = time;
+                db.SaveChanges();
+                return Task.CompletedTask;
+            }
+        }
+
+        public Task ChangeTime(Guid appointmentId, DateTime timeFrom, DateTime timeTo, CancellationToken cancellationToken)
+        {
+            using (var db = new AppointmentContext())
+            {
+                var hunter = db.Hunters.First(x => x.Id == appointmentId);
+                hunter.DesiredTimeFrom = timeFrom;
+                hunter.DesiredTimeTo = timeTo;
                 db.SaveChanges();
                 return Task.CompletedTask;
             }

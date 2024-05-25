@@ -16,6 +16,8 @@ public class AppointmentHunter
     public int? DoctorId { get; set; }
     public System.DayOfWeek? DesiredDay { get; set; }
     public DateTime? DesiredTime { get; set; }
+    public DateTime? DesiredTimeFrom { get; set; }
+    public DateTime? DesiredTimeTo { get; set; }
     public HunterStatement Statement { get; set; } = HunterStatement.None;
     public string SpecialityName { get; set; }
 }

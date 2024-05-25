@@ -8,13 +8,13 @@ namespace TelegramAppointmentBot.Service.Contract.Interfaces
     {
         //TODO Методы для создания записи к врачу
         Task<Guid> Create(Guid patientId, int lpuId, string specialityName, int doctorId, CancellationToken cancellationToken);
-        Task ChangeDoctorId(Guid appointmentId, int doctorId, CancellationToken cancellationToken);
 
-        Task ChangeDayOfWeek(Guid appointmentId, System.DayOfWeek dayOfWeek, CancellationToken cancellationToken);
+        Task ChangeDayOfWeek(Guid appointmentId, System.DayOfWeek? dayOfWeek, CancellationToken cancellationToken);
 
         Task<AppointmentHunter> GetHunterById(Guid appointmentId, CancellationToken cancellationToken);
 
         Task ChangeTime(Guid appointmentId, DateTime time, CancellationToken cancellationToken);
+        Task ChangeTime(Guid appointmentId, DateTime timeFrom, DateTime timeTo, CancellationToken cancellationToken);
         Task ChangeStatement(Guid appointmentId, HunterStatement statement, CancellationToken cancellationToken);
         Task<HunterStatement> GetStatement(Guid appointmentId, CancellationToken cancellationToken);
         Task Delete(Guid appointmentId, CancellationToken cancellationToken);

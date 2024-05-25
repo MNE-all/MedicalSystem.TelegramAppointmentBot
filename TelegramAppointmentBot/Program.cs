@@ -1,4 +1,6 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Globalization;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
@@ -10,6 +12,7 @@ using TelegramAppointmentBot;
 using TelegramAppointmentBot.Context.Enums;
 using TelegramAppointmentBot.Context.Models;
 using TelegramAppointmentBot.Context.Models.Response;
+using TelegramAppointmentBot.Models;
 using TelegramAppointmentBot.Service.Contract.Interfaces;
 using TelegramAppointmentBot.Service.Implementation;
 using User = TelegramAppointmentBot.Context.Models.User;
@@ -90,8 +93,6 @@ class Program
 
     private static async Task UpdateHandler(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
-        Console.WriteLine("");
-
         try
         {
             _ = Task.Run(async () =>
@@ -145,7 +146,6 @@ class Program
                                 case "Профили":
                                     await ClearUserMemory(user, cancellationToken);
                                     var profiles = await ProfileService.GetUserProfilesAsync(user!.Id, cancellationToken);
-
 
                                     var buttons = new List<InlineKeyboardButton[]>();
                                     foreach (var profile in profiles)
@@ -238,25 +238,56 @@ class Program
                                             break;
                                         case ProfileStatement.AddBirthdate:
                                             profileId = await UserService.GetCurrentProfile(user!.Id, cancellationToken);
-                                            await ProfileService.ChangeBirthdate(profileId.Value, DateTime.Parse(message.Text!), cancellationToken);
-                                            await UserService.ChangeStatement(user!.Id, ProfileStatement.Finished, cancellationToken);
-                                            await ProfileService.ValidateProfile(profileId.Value, cancellationToken);
-                                            profile = ProfileService.GetProfileByIdAsync(profileId.Value, cancellationToken);
-                                            await botClient.SendTextMessageAsync(user.Id,
-                                                $"Название профиля: {profile.Result.Title}\n" +
-                                                $"ОМС: {profile.Result.OMS}\n" +
-                                                $"Фамилия: {profile.Result.Surname}\n" +
-                                                $"Имя: {profile.Result.Name}\n" +
-                                                $"Отчество: {profile.Result.Patronomyc}\n" +
-                                                $"Дата рождения: {profile.Result.Birthdate!.Value.ToString("D")}\n");
+                                            if (DateTime.TryParse(message.Text!, out var bithdate))
+                                            {
+                                                await ProfileService.ChangeBirthdate(profileId.Value, bithdate, cancellationToken);
+                                                await UserService.ChangeStatement(user!.Id, ProfileStatement.Finished, cancellationToken);
+                                                await ProfileService.ValidateProfile(profileId.Value, cancellationToken);
+                                                profile = ProfileService.GetProfileByIdAsync(profileId.Value, cancellationToken);
+                                                await botClient.SendTextMessageAsync(user.Id,
+                                                    $"Название профиля: {profile.Result.Title}\n" +
+                                                    $"ОМС: {profile.Result.OMS}\n" +
+                                                    $"Фамилия: {profile.Result.Surname}\n" +
+                                                    $"Имя: {profile.Result.Name}\n" +
+                                                    $"Отчество: {profile.Result.Patronomyc}\n" +
+                                                    $"Дата рождения: {profile.Result.Birthdate!.Value.ToString("D")}\n");
+                                            }
+                                            else
+                                            {
+                                                await botClient.SendTextMessageAsync(user.Id, "Данные в неверном виде\n" +
+                                                    "Попробуйте ввести дату в формате дд.мм.гггг");
+                                            }
+
                                             break;
                                         case ProfileStatement.AddTime:
                                             hunter = await UserService.GetCurrentHunter(user.Id, cancellationToken);
-                                            await AppointmentHunterService.ChangeTime(hunter.Value, DateTime.Parse(message.Text!), cancellationToken);
-                                            await botClient.SendTextMessageAsync(user.Id, "Запись отслеживается");
-                                            await AppointmentHunterService.ChangeStatement(hunter.Value, HunterStatement.InProgress, cancellationToken);
-                                            await ClearUserMemory(user, cancellationToken);
-                                            break;
+
+                                            var userInput = message.Text!.Split('-');
+
+                                            if (userInput.Length == 1)
+                                            {
+                                                if (DateTime.TryParse(message.Text!, out var date))
+                                                {
+                                                    await AppointmentHunterService.ChangeTime(hunter.Value, date, cancellationToken);
+                                                    await botClient.SendTextMessageAsync(user.Id, "Запись отслеживается");
+                                                    await AppointmentHunterService.ChangeStatement(hunter.Value, HunterStatement.InProgress, cancellationToken);
+                                                    await ClearUserMemory(user, cancellationToken);
+                                                    return;
+                                                }
+                                            }
+                                            else if (userInput.Length == 2)
+                                            {
+                                                if (DateTime.TryParse(userInput[0], out var dateFrom) && DateTime.TryParse(userInput[1], out var dateTo))
+                                                {
+                                                    await AppointmentHunterService.ChangeTime(hunter.Value, dateFrom, dateTo, cancellationToken);
+                                                    await botClient.SendTextMessageAsync(user.Id, "Запись отслеживается");
+                                                    await AppointmentHunterService.ChangeStatement(hunter.Value, HunterStatement.InProgress, cancellationToken);
+                                                    await ClearUserMemory(user, cancellationToken);
+                                                    return;
+                                                }
+                                            }
+                                            await botClient.SendTextMessageAsync(user.Id, "Данные в неверном формате");
+                                            return;
                                         case ProfileStatement.ChangeTitle:
                                             profileId = await UserService.GetCurrentProfile(user.Id, cancellationToken);
                                             await ProfileService.ChangeTitle(profileId.Value, message.Text!, cancellationToken);
@@ -295,9 +326,17 @@ class Program
                                             break;
                                         case ProfileStatement.ChangeBirthdate:
                                             profileId = await UserService.GetCurrentProfile(user.Id, cancellationToken);
-                                            await ProfileService.ChangeBirthdate(profileId.Value, DateTime.Parse(message.Text!), cancellationToken);
-                                            await ClearUserMemory(user, cancellationToken);
-                                            await botClient.SendTextMessageAsync(user.Id, "Дата рождения изменена!");
+
+                                            if (DateTime.TryParse(message.Text!, out bithdate))
+                                            {
+                                                await ProfileService.ChangeBirthdate(profileId.Value, DateTime.Parse(message.Text!), cancellationToken);
+                                                await ClearUserMemory(user, cancellationToken);
+                                                await botClient.SendTextMessageAsync(user.Id, "Дата рождения изменена!");
+                                            }
+                                            else
+                                            {
+                                                await botClient.SendTextMessageAsync(user.Id, "Неверный тип данных");
+                                            }
                                             break;
                                         default:
                                             break;
@@ -352,6 +391,7 @@ class Program
                                     user.Id,
                                     "Выберите кого хотите записать:",
                                     replyMarkup: inlineKeyboard);
+                                return;
                             }
                             else if (callbackQuery.Data == "ShowVisits")
                             {
@@ -372,6 +412,7 @@ class Program
                                     user.Id,
                                     "Выберите чьи визиты желаете просмотреть:",
                                     replyMarkup: inlineKeyboard);
+                                return;
                             }
                             else if (callbackQuery.Data == "ShowAppointments")
                             {
@@ -392,6 +433,7 @@ class Program
                                     user.Id,
                                     "Выберите чьи записи желаете просмотреть:",
                                     replyMarkup: inlineKeyboard);
+                                return;
                             }
 
                             if (callbackQuery.Data!.Split(":").Length > 1)
@@ -406,15 +448,14 @@ class Program
                                             await ClearUserMemory(user, cancellationToken);
                                             // А здесь мы добавляем наш сообственный текст, который заменит слово "загрузка", когда мы нажмем на кнопку
                                             await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
-                                            try
+                                            var getLPUs = await GorzdravService.GetLPUs(Guid.Parse(list[1]), cancellationToken);
+
+                                            if (getLPUs.success)
                                             {
-
-
-                                                var LPUsList = await GorzdravService.GetLPUs(Guid.Parse(list[1]), cancellationToken);
                                                 await UserService.ChangeCurrentProfile(user.Id, Guid.Parse(list[1]), cancellationToken);
 
                                                 var buttons = new List<InlineKeyboardButton[]>();
-                                                foreach (var lpu in LPUsList)
+                                                foreach (var lpu in getLPUs.result)
                                                 {
                                                     buttons.Add(new[]
                                                     {
@@ -428,12 +469,11 @@ class Program
                                                     $"Выберите медицинское учереждение:",
                                                     replyMarkup: inlineKeyboard);
                                             }
-                                            catch (Exception ex)
+                                            else
                                             {
-                                                await botClient.SendTextMessageAsync(
-                                                    chat.Id,
-                                                    $"Сервис горздрава временно недоступен :(");
+                                                GorzdravError(chat.Id, getLPUs.message!, getLPUs.errorCode, cancellationToken);
                                             }
+
                                             return;
                                         }
 
@@ -462,14 +502,7 @@ class Program
                                             }
                                             else
                                             {
-                                                var tryMessage = "Повторите попытку или попробуйте позже";
-                                                var answer = $"Горздрав: {specs.message}\n";
-                                                if (specs.errorCode == 1)
-                                                {
-                                                    answer += tryMessage;
-                                                }
-
-                                                await botClient.SendTextMessageAsync(chat.Id, answer);
+                                                GorzdravError(chat.Id, specs.message!, specs.errorCode, cancellationToken);
                                             }
 
                                             return;
@@ -477,61 +510,63 @@ class Program
                                 
                                     case InlineMode.AppointmentSpecialities:
                                         {
-                                            // ClearUserMemory part
-                                            var hunter = await UserService.GetCurrentHunter(user!.Id, cancellationToken);
-                                            if (hunter != null && await AppointmentHunterService.GetStatement(hunter.Value, cancellationToken) == HunterStatement.None)
-                                            {
-                                                await AppointmentHunterService.Delete(hunter.Value, cancellationToken);
-                                            }
-                                            await UserService.ClearCurrentHunter(user!.Id, cancellationToken);
-                                            //
-
-                                            ;
-
                                             var speciality = await SpecialityService.GetBySystemId(Guid.Parse(list[1]), cancellationToken);
 
-                                            var doctors = await GorzdravService.GetDoctors(speciality.lpuId, speciality.id, cancellationToken);
+                                            var getDoctor = await GorzdravService.GetDoctors(speciality.lpuId, speciality.id, cancellationToken);
 
 
                                             await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
 
-                                            var buttons = new List<InlineKeyboardButton[]>();
-                                            foreach (var doctor in doctors)
+                                            if (getDoctor.success)
                                             {
-                                                buttons.Add(new[]
+                                                var buttons = new List<InlineKeyboardButton[]>();
+                                                foreach (var doctor in getDoctor.result)
                                                 {
+                                                    buttons.Add(new[]
+                                                    {
                                                     InlineKeyboardButton.WithCallbackData(doctor.name, (int)InlineMode.AppointmentDoctor + ":" + doctor.id + ":" + speciality.SystemId)
                                                 });
+                                                }
+                                                var inlineKeyboard = new InlineKeyboardMarkup(buttons);
+
+
+                                                await botClient.SendTextMessageAsync(
+                                                    chat.Id,
+                                                    $"Выберите врача:",
+                                                    replyMarkup: inlineKeyboard);
                                             }
-                                            var inlineKeyboard = new InlineKeyboardMarkup(buttons);
+                                            else
+                                            {
+                                                GorzdravError(chat.Id, getDoctor.message!, getDoctor.errorCode, cancellationToken);
+
+                                            }
 
 
-                                            await botClient.SendTextMessageAsync(
-                                                chat.Id,
-                                                $"Выберите врача:",
-                                                replyMarkup: inlineKeyboard);
                                             return;
                                         }
                                     case InlineMode.AppointmentDoctor:
                                         {
                                             var speciality = await SpecialityService.GetBySystemId(Guid.Parse(list[2]), cancellationToken);
-
-                                            var profileId = await UserService.GetCurrentProfile(user.Id!, cancellationToken);
-
-                                            var hunterId = await AppointmentHunterService.Create(profileId.Value, speciality.lpuId, 
-                                                speciality.name, int.Parse(list[1]), cancellationToken);
-
-                                            await UserService.ChangeCurrentHunter(user.Id!, hunterId, cancellationToken);
-
-                                            var hunter = await AppointmentHunterService.GetHunterById(hunterId, cancellationToken);
-
-
-                                            var timetable = await GorzdravService.GetTimetable(hunter.LpuId, hunter.DoctorId!.Value, cancellationToken);
+                                                                                        
+                                            var timetable = await GorzdravService.GetTimetable(speciality.lpuId, int.Parse(list[1]), cancellationToken);
 
                                             await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
 
                                             if (timetable.success)
                                             {
+                                                var hunter = await UserService.GetCurrentHunter(user!.Id, cancellationToken);
+                                                if (hunter != null && await AppointmentHunterService.GetStatement(hunter.Value, cancellationToken) == HunterStatement.None)
+                                                {
+                                                    await AppointmentHunterService.Delete(hunter.Value, cancellationToken);
+                                                }
+
+                                                var profileId = await UserService.GetCurrentProfile(user.Id!, cancellationToken);
+
+                                                var hunterId = await AppointmentHunterService.Create(profileId.Value, speciality.lpuId,
+                                                speciality.name, int.Parse(list[1]), cancellationToken);
+                                                await UserService.ChangeCurrentHunter(user.Id!, hunterId, cancellationToken);
+
+
                                                 var buttons = new List<InlineKeyboardButton[]>();
                                                 if (timetable.result != null)
                                                 {
@@ -552,14 +587,19 @@ class Program
                                                         {
                                                             buttons.Add(new[]
                                                             {
-                                                            InlineKeyboardButton.WithCallbackData($"{daysNames[days.IndexOf(day)]}: " +
-                                                            new DateTime(day.Min(x => x.visitStart.TimeOfDay).Ticks).ToString("t") +
-                                                            " - " +
-                                                            new DateTime(day.Max(x => x.visitEnd.TimeOfDay).Ticks).ToString("t"),
-                                                            $"{(int)InlineMode.AppointmentDay}:{(int)day.First().visitStart.DayOfWeek}")
-                                                        });
+                                                                InlineKeyboardButton.WithCallbackData($"{daysNames[days.IndexOf(day)]}: " +
+                                                                new DateTime(day.Min(x => x.visitStart.TimeOfDay).Ticks).ToString("t") +
+                                                                " - " +
+                                                                new DateTime(day.Max(x => x.visitEnd.TimeOfDay).Ticks).ToString("t"),
+                                                                $"{(int)InlineMode.AppointmentDay}:{(int)day.First().visitStart.DayOfWeek}")
+                                                            });
                                                         }
                                                     }
+                                                    buttons.Add(new[]
+                                                    {
+                                                        InlineKeyboardButton.WithCallbackData($"Любой",
+                                                        $"{(int)InlineMode.AppointmentDay}:Любой")
+                                                    });
 
                                                     var inlineKeyboard = new InlineKeyboardMarkup(buttons);
 
@@ -571,14 +611,7 @@ class Program
                                             }
                                             else
                                             {
-                                                var tryMessage = "Повторите попытку или попробуйте позже";
-                                                var answer = $"Горздрав: {timetable.message}\n";
-                                                if (timetable.errorCode == 1)
-                                                {
-                                                    answer += tryMessage;
-                                                }
-
-                                                await botClient.SendTextMessageAsync(chat.Id, answer);
+                                                GorzdravError(chat.Id, timetable.message!, timetable.errorCode, cancellationToken);
                                             }
                                             return;
                                         }
@@ -587,31 +620,58 @@ class Program
                                             var hunterId = await UserService.GetCurrentHunter(user.Id!, cancellationToken);
                                             var hunter = await AppointmentHunterService.GetHunterById(hunterId.Value, cancellationToken);
 
-                                            var dayOfWeek = (System.DayOfWeek)int.Parse(list[1]);
-                                            await AppointmentHunterService.ChangeDayOfWeek(hunterId.Value, dayOfWeek, cancellationToken);
                                             var timetable = await GorzdravService.GetTimetable(hunter.LpuId, hunter.DoctorId!.Value, cancellationToken);
 
                                             await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
 
+                                            System.DayOfWeek? dayOfWeek = null;
+
+                                            if (int.TryParse(list[1], out var dayOfWeekInt))
+                                            {
+                                                dayOfWeek = (System.DayOfWeek)dayOfWeekInt;
+                                                await AppointmentHunterService.ChangeDayOfWeek(hunterId.Value, dayOfWeek.Value, cancellationToken);
+                                            }
+
                                             if (timetable.success)
                                             {
-                                                string answer = "Введите интересующее время посещения\n" +
+                                                string answer = "Введите интересующее время посещения или желаемый диапозон времени через дефис\n" +
+                                                "пример: 12:00 - 13:00\n" +
                                                 "(в рамках: ";
                                                 if (timetable.result != null)
                                                 {
-                                                    var times = timetable.result.Where(x => x.visitEnd.DayOfWeek == dayOfWeek).ToList();
 
-                                                    var dayTime = times.First();
+                                                    List<TimetableDayResult> times = new();
 
-                                                    await AppointmentHunterService.ChangeDayOfWeek(hunterId.Value, dayTime.visitStart.DayOfWeek, cancellationToken);
+                                                    if (dayOfWeek != null)
+                                                    {
+                                                        times = timetable.result.Where(x => x.visitEnd.DayOfWeek == dayOfWeek).ToList();
+                                                    }
+                                                    else
+                                                    {
+                                                        times = timetable.result.ToList();
+                                                    }
 
+                                                    await AppointmentHunterService.ChangeDayOfWeek(hunterId.Value, dayOfWeek, cancellationToken);
+
+                                                    List<TimeFrame> timeFrameList = new();
                                                     foreach (var t in times)
                                                     {
-                                                        answer += new DateTime(t.visitStart.TimeOfDay.Ticks).ToString("t") +
-                                                                " - " +
-                                                                new DateTime(t.visitEnd.TimeOfDay.Ticks).ToString("t");
+                                                        timeFrameList.Add(new TimeFrame
+                                                        {
+                                                            TimeStart = t.visitStart.TimeOfDay,
+                                                            TimeEnd = t.visitEnd.TimeOfDay
+                                                        });
+                                                    }
 
-                                                        if (times.IndexOf(t) != times.Count - 1)
+                                                    var distinctTimes = timeFrameList.Select(x => new { x.TimeStart, x.TimeEnd }).Distinct().ToList();
+
+                                                    foreach (var frame in distinctTimes)
+                                                    {
+                                                        answer += new DateTime(frame.TimeStart.Ticks).ToString("t") +
+                                                                " - " +
+                                                                new DateTime(frame.TimeEnd.Ticks).ToString("t");
+
+                                                        if (distinctTimes.IndexOf(frame) != distinctTimes.Count - 1)
                                                         {
                                                             answer += ", ";
                                                         }
@@ -627,7 +687,7 @@ class Program
                                             }
                                             else
                                             {
-                                                await botClient.SendTextMessageAsync(chat.Id, "Горздрав: " + timetable.message!);
+                                                GorzdravError(chat.Id, timetable.message!, timetable.errorCode, cancellationToken);
                                             }
                                             return;
                                         }
@@ -635,28 +695,41 @@ class Program
                                         {
                                             await ClearUserMemory(user, cancellationToken);
                                             var profileId = Guid.Parse(list[1]);
-                                            var lpus = await GorzdravService.GetLPUs(profileId, cancellationToken);
+
+                                            await botClient.AnswerCallbackQueryAsync(callbackQuery.Id, "Ожидание ответа от горздрава...");
+
+                                            var getLpus = await GorzdravService.GetLPUs(profileId, cancellationToken);
                                             var profile = await ProfileService.GetProfileByIdAsync(profileId, cancellationToken);
 
                                             List<VisitResult> results = new List<VisitResult>();
-                                            foreach (var lpu in lpus)
+                                            if (getLpus.success)
                                             {
-                                                var patientGet = await GorzdravService.GetPatient(profileId, lpu.id, cancellationToken);
+                                                
+                                                foreach (var lpu in getLpus.result)
+                                                {
+                                                    var patientGet = await GorzdravService.GetPatient(profileId, lpu.id, cancellationToken);
 
-                                                if (!patientGet.success)
-                                                {
-                                                    await botClient.SendTextMessageAsync(chat.Id, $"{lpu.lpuFullName}\n" +
-                                                        $"{patientGet.message}");
-                                                }
-                                                else
-                                                {
-                                                    var response = await GorzdravService.GetVisits(patientGet.result, lpu.id, cancellationToken);
-                                                    if (response != null && response.result != null)
+                                                    if (!patientGet.success)
                                                     {
-                                                        results.AddRange(response.result);
+                                                        await botClient.SendTextMessageAsync(chat.Id, $"{lpu.lpuFullName}\n" +
+                                                            $"{patientGet.message}");
+                                                    }
+                                                    else
+                                                    {
+                                                        var response = await GorzdravService.GetVisits(patientGet.result, lpu.id, cancellationToken);
+                                                        if (response != null && response.result != null)
+                                                        {
+                                                            results.AddRange(response.result);
+                                                        }
                                                     }
                                                 }
                                             }
+                                            else
+                                            {
+                                                GorzdravError(chat.Id, getLpus.message!, getLpus.errorCode, cancellationToken);
+                                            }
+
+                                            
 
                                             foreach (var result in results)
                                             {
@@ -680,7 +753,7 @@ class Program
                                             {
                                                 await botClient.SendTextMessageAsync(chat.Id, "Предстоящие визиты отсутсвуют");
                                             }
-                                            await botClient.AnswerCallbackQueryAsync(callbackQuery.Id, "Ожидание ответа от горздрава...", showAlert: true);
+                                            
 
                                             return;
                                         }
@@ -699,11 +772,27 @@ class Program
                                                 var button = InlineKeyboardButton.WithCallbackData("Отменить", (int)InlineMode.DeleteHunter + ":" + hunter.Id);
                                                 var inlineKeyboard = new InlineKeyboardMarkup(button);
 
-                                                string dayOfWeek = CultureInfo.CurrentCulture.DateTimeFormat.GetDayName(hunter.DesiredDay.Value);
+                                                string dayOfWeek = "Любой";
+                                                if (hunter.DesiredDay != null)
+                                                {
+                                                    dayOfWeek = CultureInfo.GetCultureInfo("ru-RU").DateTimeFormat.GetDayName(hunter.DesiredDay!.Value);
+                                                }
+
+                                                string desiredTime = "";
+
+                                                if (hunter.DesiredTime != null)
+                                                {
+                                                    desiredTime = hunter.DesiredTime.Value.ToString("t");
+                                                }
+                                                else if (hunter.DesiredTimeFrom != null && hunter.DesiredTimeTo != null)
+                                                {
+                                                    desiredTime = $"{hunter.DesiredTimeFrom.Value.ToString("t")} - {hunter.DesiredTimeTo.Value.ToString("t")}";
+                                                }
+
 
                                                 await botClient.SendTextMessageAsync(chat.Id,
                                                     $"К кому: {hunter.SpecialityName}\n" +
-                                                    $"Желаемое время: {hunter.DesiredTime.Value.ToString("t")}\n" +
+                                                    $"Желаемое время: {desiredTime}\n" +
                                                     $"Желаемый день недели: {char.ToUpper(dayOfWeek[0]) + dayOfWeek.Substring(1)}", replyMarkup: inlineKeyboard);
                                             }
                                             if (hunters.Count == 0)
@@ -717,8 +806,6 @@ class Program
                                         await AppointmentHunterService.Delete(Guid.Parse(list[1]), cancellationToken);
                                         await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
                                         await botClient.SendTextMessageAsync(chat.Id, "Запись удалена!");
-
-
                                         return;
 
                                     case InlineMode.DeleteVisit:
@@ -741,8 +828,7 @@ class Program
                                             }
                                             else
                                             {
-                                                await botClient.SendTextMessageAsync(chat.Id, "Ошибка горздрава!\n" +
-                                                    "Повторите попытку или попробуйте позже");
+                                                GorzdravError(chat.Id, response.message!, response.errorCode, cancellationToken);
                                             }
 
                                             return;
@@ -755,16 +841,17 @@ class Program
 
                                             await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
 
-                                            var buttons = new List<InlineKeyboardButton[]>();
-
-                                            buttons.Add(new[]
+                                            var buttons = new List<InlineKeyboardButton[]>
+                                            {
+                                                new[]
                                             {
                                                 InlineKeyboardButton.WithCallbackData("Изменить", (int)InlineMode.ChangeProfile + ":" + list[1])
-                                            });
-                                            buttons.Add(new[]
+                                            },
+                                                new[]
                                             {
                                                 InlineKeyboardButton.WithCallbackData("Удалить", (int)InlineMode.DeleteProfile + ":" + list[1])
-                                            });
+                                            }
+                                            };
                                             var inlineKeyboard = new InlineKeyboardMarkup(buttons);
 
                                             string birthdate = "";
@@ -940,12 +1027,32 @@ class Program
 
             if (appointments != null && appointments.result != null)
             {
-                var list = appointments.result.Where(x => x.visitStart.DayOfWeek == hunter.DesiredDay).ToList();
+                List<TimetableResult> list = new();
+                if (hunter.DesiredDay != null)
+                {
+                    list = appointments.result.Where(x => x.visitStart.DayOfWeek == hunter.DesiredDay).ToList();
+                }
+                else
+                {
+                    list = appointments.result;
+                }
+                
                 if (list.Count > 0)
                 {
-                    var item = list.LastOrDefault(x =>
-                    x.visitStart.TimeOfDay <= hunter.DesiredTime.Value.TimeOfDay &&
-                    x.visitEnd.TimeOfDay >= hunter.DesiredTime.Value.TimeOfDay);
+                    TimetableResult? item = null;
+                    if (hunter.DesiredTime != null)
+                    {
+                        item = list.LastOrDefault(x =>
+                        x.visitStart.TimeOfDay <= hunter.DesiredTime.Value.TimeOfDay &&
+                        x.visitEnd.TimeOfDay >= hunter.DesiredTime.Value.TimeOfDay);
+                    }
+                    else if (hunter.DesiredTimeFrom != null && hunter.DesiredTimeTo != null)
+                    {
+                        item = list.FirstOrDefault(x =>
+                        x.visitStart.TimeOfDay >= hunter.DesiredTimeFrom!.Value.TimeOfDay &&
+                        x.visitStart.TimeOfDay <= hunter.DesiredTimeTo!.Value.TimeOfDay);
+                    }
+                    
                     if (item != null)
                     {
                         var profile = await ProfileService.GetProfileByIdAsync(hunter.PatientId, cancellationToken);
@@ -998,8 +1105,20 @@ class Program
                 }
             }
         }
-
+        
         Console.WriteLine($"{DateTime.Now}");
 
+    }
+
+    private static async void GorzdravError(long chatId, string message, int errorCode, CancellationToken cancellationToken)
+    {
+        var tryMessage = "Повторите попытку или попробуйте позже";
+        var answer = $"Горздрав: {message}\n";
+        if (errorCode == 1)
+        {
+            answer += tryMessage;
+        }
+
+        await _botClient.SendTextMessageAsync(chatId, answer);
     }
 }
