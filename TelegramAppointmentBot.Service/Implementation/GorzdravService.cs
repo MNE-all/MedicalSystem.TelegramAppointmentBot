@@ -27,21 +27,16 @@ public class GorzdravService : IGorzdravService
     }
     
 
-    public async Task DeleteAppointment(CancelTheAppointment model, CancellationToken cancellationToken)
+    public async Task<Context.Models.Response.CancelTheAppointment> DeleteAppointment(Context.Models.Request.CancelTheAppointment model, CancellationToken cancellationToken)
     {
         // TODO Создание записи
         JsonContent content = JsonContent.Create(model);
 
-        bool success = false;
-        while (!success)
+        using (var response = httpClient.PostAsync("https://gorzdrav.spb.ru/_api/api/v2/appointment/cancel", content))
         {
-            using (var response = httpClient.PostAsync("https://gorzdrav.spb.ru/_api/api/v2/appointment/cancel", content))
-            {
-                var responseBody = await response.Result.Content.ReadFromJsonAsync<GorzdravResponse>(cancellationToken: cancellationToken);
-                Console.WriteLine("DeleteAppointment: " + responseBody.message);
-                success = responseBody.success;
-                return;
-            }
+            var responseBody = await response.Result.Content.ReadFromJsonAsync<Context.Models.Response.CancelTheAppointment>(cancellationToken: cancellationToken);
+            Console.WriteLine("DeleteAppointment: " + responseBody.message);
+            return responseBody;
         }
     }
 
@@ -95,7 +90,7 @@ public class GorzdravService : IGorzdravService
 
     public async Task<GetPatient> GetPatient(Guid profileId, int lpuId, CancellationToken cancellationToken)
     {
-        using(var db = new AppointmentContext())
+        using (var db = new AppointmentContext())
         {
             var profile = db.Profiles.First(x => x.Id == profileId);
             var content = new FindAPatient
@@ -108,38 +103,29 @@ public class GorzdravService : IGorzdravService
 
             };
 
-            bool success = false;
-            GetPatient responseBody = new();
             var link = $"https://gorzdrav.spb.ru/_api/api/v2/patient/search?lpuId={lpuId}&lastName={profile.Surname}&firstName={profile.Name}&middleName={profile.Patronomyc}&birthdate={profile.Birthdate.Value.ToString("s")}";
-            while (!success)
+
+            using (var request = new HttpRequestMessage(HttpMethod.Get, link))
             {
-                using (var request = new HttpRequestMessage(HttpMethod.Get, link))
-                {
-                    var response = httpClient.SendAsync(request, cancellationToken).Result;
+                var response = httpClient.SendAsync(request, cancellationToken).Result;
 
-                    Console.WriteLine(await response.Content.ReadAsStringAsync());
+                Console.WriteLine(await response.Content.ReadAsStringAsync());
 
-                    responseBody = await response.Content.ReadFromJsonAsync<GetPatient>(cancellationToken: cancellationToken);
+                var responseBody = await response.Content.ReadFromJsonAsync<GetPatient>(cancellationToken: cancellationToken);
 
-                    success = responseBody.success;
-                }
+                return responseBody!;
             }
-            return responseBody;
-
         }
     }
 
-    public async Task<IEnumerable<SpecialtiesResult>> GetSpecialties(int lpuId, CancellationToken cancellationToken)
+    public async Task<GetSpecialties> GetSpecialties(int lpuId, CancellationToken cancellationToken)
     {
-        var result = new List<SpecialtiesResult>();
         using (var request = new HttpRequestMessage(new HttpMethod("GET"), $"https://gorzdrav.spb.ru/_api/api/v2/schedule/lpu/{lpuId}/specialties"))
         {
             var response = httpClient.SendAsync(request, cancellationToken).Result;
             var responseBody = await response.Content.ReadFromJsonAsync<GetSpecialties>(cancellationToken: cancellationToken);
-            result.AddRange(responseBody!.result);
-        }
-
-        return result;
+            return responseBody!;
+        }        
     }
 
     public async Task<GetTimetable> GetTimetable(int lpuId, int doctorId, CancellationToken cancellationToken)

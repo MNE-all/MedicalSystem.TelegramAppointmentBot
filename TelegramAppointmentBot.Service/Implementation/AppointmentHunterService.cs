@@ -50,7 +50,7 @@ namespace TelegramAppointmentBot.Service.Implementation
             }
         }
 
-        public Task<Guid> Create(Guid patientId, int lpuId, string specialityName, CancellationToken cancellationToken)
+        public Task<Guid> Create(Guid patientId, int lpuId, string specialityName, int doctorId, CancellationToken cancellationToken)
         {
             using (var db = new AppointmentContext())
             {
@@ -59,6 +59,7 @@ namespace TelegramAppointmentBot.Service.Implementation
                     LpuId = lpuId,
                     PatientId = patientId,
                     SpecialityName = specialityName,
+                    DoctorId = doctorId,
                 });
                 db.SaveChanges();
                 return Task.FromResult(result.Entity.Id);

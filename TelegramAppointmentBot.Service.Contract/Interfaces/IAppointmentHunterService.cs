@@ -7,7 +7,7 @@ namespace TelegramAppointmentBot.Service.Contract.Interfaces
     public interface IAppointmentHunterService
     {
         //TODO Методы для создания записи к врачу
-        Task<Guid> Create(Guid patientId, int lpuId, string specialityName, CancellationToken cancellationToken);
+        Task<Guid> Create(Guid patientId, int lpuId, string specialityName, int doctorId, CancellationToken cancellationToken);
         Task ChangeDoctorId(Guid appointmentId, int doctorId, CancellationToken cancellationToken);
 
         Task ChangeDayOfWeek(Guid appointmentId, System.DayOfWeek dayOfWeek, CancellationToken cancellationToken);
