@@ -1131,6 +1131,7 @@ class Program
 
     public async static void TryToWrite(object? obj)
     {
+        Console.WriteLine($"{DateTime.Now}");
         _ = Task.Run(async () =>
         {
             var cancellationToken = new CancellationToken();
