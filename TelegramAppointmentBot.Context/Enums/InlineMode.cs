@@ -30,6 +30,8 @@ namespace TelegramAppointmentBot.Context.Enums
 
         HuntersShow,
 
-        DeleteHunter
+        DeleteHunter,
+
+        LpuVisitsShow
     }
 }

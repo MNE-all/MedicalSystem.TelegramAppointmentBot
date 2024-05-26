@@ -739,9 +739,11 @@ class Program
                                             await botClient.AnswerCallbackQueryAsync(callbackQuery.Id, "Ожидание ответа от горздрава...");
 
                                             var getLpus = await GorzdravService.GetLPUs(profileId, cancellationToken);
-                                            var profile = await ProfileService.GetProfileByIdAsync(profileId, cancellationToken);
 
                                             //TODO Можно сделать разбивку по мед. учреждениям + поиск по всем
+
+                                            var buttons = new List<InlineKeyboardButton[]>();
+
 
                                             List<VisitResult> results = new List<VisitResult>();
                                             if (getLpus.success)
@@ -749,33 +751,105 @@ class Program
                                                 
                                                 foreach (var lpu in getLpus.result)
                                                 {
-                                                    var patientGet = await GorzdravService.GetPatient(profileId, lpu.id, cancellationToken);
-
-                                                    if (!patientGet.success)
+                                                    buttons.Add(new[]
                                                     {
-                                                        await botClient.SendTextMessageAsync(chat.Id, $"{lpu.lpuFullName}\n" +
-                                                            $"{patientGet.message}");
-                                                    }
-                                                    else
-                                                    {
-                                                        var response = await GorzdravService.GetVisits(patientGet.result, lpu.id, cancellationToken);
-                                                        if (response.success && response.result != null)
-                                                        {
-                                                            results.AddRange(response.result);
-                                                        }
-                                                        else
-                                                        {
-                                                            GorzdravError(chat.Id, response!.message!, response.errorCode, cancellationToken);
-                                                        }
-                                                    }
+                                                        InlineKeyboardButton.WithCallbackData($"{lpu.lpuFullName}",
+                                                        $"{(int)InlineMode.LpuVisitsShow}:{profileId}:{lpu.id}")
+                                                    });
                                                 }
+                                                buttons.Add(new[]
+                                                {
+                                                    InlineKeyboardButton.WithCallbackData($"Все",
+                                                    $"{(int)InlineMode.LpuVisitsShow}:{profileId}:Все")
+                                                });
                                             }
                                             else
                                             {
                                                 GorzdravError(chat.Id, getLpus.message!, getLpus.errorCode, cancellationToken);
                                             }
 
-                                            
+
+                                            var inlineKeyboard = new InlineKeyboardMarkup(buttons);
+
+
+                                            await botClient.SendTextMessageAsync(chat.Id, "Выберите в каком медицинском учреждении желаете просмотреть предстоящие визиты: ",
+                                                replyMarkup: inlineKeyboard);                                            
+
+                                            return;
+                                        }
+                                    case InlineMode.LpuVisitsShow:
+                                        {
+                                            await ClearUserMemory(user, cancellationToken);
+
+                                            var profileId = Guid.Parse(list[1]);
+                                            var profile = await ProfileService.GetProfileByIdAsync(profileId, cancellationToken);
+
+                                            List<VisitResult> results = new List<VisitResult>();
+
+                                            await botClient.AnswerCallbackQueryAsync(callbackQuery.Id, "Ожидание ответа от горздрава...");
+
+
+                                            if (list[2] == "Все")
+                                            {
+                                                var getLpus = await GorzdravService.GetLPUs(profileId, cancellationToken);
+
+                                                
+                                                if (getLpus.success)
+                                                {
+
+                                                    foreach (var lpu in getLpus.result)
+                                                    {
+                                                        var patientGet = await GorzdravService.GetPatient(profileId, lpu.id, cancellationToken);
+
+                                                        if (!patientGet.success)
+                                                        {
+                                                            await botClient.SendTextMessageAsync(chat.Id, $"{lpu.lpuFullName}\n" +
+                                                                $"{patientGet.message}");
+                                                        }
+                                                        else
+                                                        {
+                                                            var response = await GorzdravService.GetVisits(patientGet.result, lpu.id, cancellationToken);
+                                                            if (response.success && response.result != null)
+                                                            {
+                                                                results.AddRange(response.result);
+                                                            }
+                                                            else
+                                                            {
+                                                                GorzdravError(chat.Id, response!.message!, response.errorCode, cancellationToken);
+                                                                return;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    GorzdravError(chat.Id, getLpus.message!, getLpus.errorCode, cancellationToken);
+                                                    return;
+                                                }
+                                            }
+                                            else if (int.TryParse(list[2], out var lpuId))
+                                            {
+                                                var patientGet = await GorzdravService.GetPatient(profileId, lpuId, cancellationToken);
+
+                                                if (patientGet.success)
+                                                {
+                                                    var response = await GorzdravService.GetVisits(patientGet.result, lpuId, cancellationToken);
+                                                    if (response.success && response.result != null)
+                                                    {
+                                                        results.AddRange(response.result);
+                                                    }
+                                                    else
+                                                    {
+                                                        GorzdravError(chat.Id, response!.message!, response.errorCode, cancellationToken);
+                                                        return;
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    GorzdravError(chat.Id, patientGet.message!, patientGet.errorCode, cancellationToken);
+                                                    return;
+                                                }
+                                            }
 
                                             foreach (var result in results)
                                             {
@@ -800,8 +874,6 @@ class Program
                                             {
                                                 await botClient.SendTextMessageAsync(chat.Id, "Предстоящие визиты отсутсвуют");
                                             }
-                                            
-
                                             return;
                                         }
                                     case InlineMode.HuntersShow:
