@@ -252,7 +252,7 @@ class Program
                                                     $"Фамилия: {profile.Result.Surname}\n" +
                                                     $"Имя: {profile.Result.Name}\n" +
                                                     $"Отчество: {profile.Result.Patronomyc}\n" +
-                                                    $"Дата рождения: {profile.Result.Birthdate!.Value.ToString("dd MMMM yyyy")}\n");
+                                                    $"Дата рождения: {profile.Result.Birthdate!.Value.ToString("d MMMM yyyy")}\n");
                                             }
                                             else
                                             {
@@ -977,7 +977,7 @@ class Program
                                             string birthdate = "";
                                             if (profile.Birthdate.HasValue)
                                             {
-                                                birthdate = profile.Birthdate.Value.ToString("dd MMMM yyyy");
+                                                birthdate = profile.Birthdate.Value.ToString("d MMMM yyyy");
                                             }
 
                                             await botClient.SendTextMessageAsync(user.Id,
