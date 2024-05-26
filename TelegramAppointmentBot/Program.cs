@@ -763,18 +763,17 @@ class Program
                                                     InlineKeyboardButton.WithCallbackData($"Все",
                                                     $"{(int)InlineMode.LpuVisitsShow}:{profileId}:Все")
                                                 });
+
+                                                var inlineKeyboard = new InlineKeyboardMarkup(buttons);
+
+
+                                                await botClient.SendTextMessageAsync(chat.Id, "Выберите в каком медицинском учреждении желаете просмотреть предстоящие визиты: ",
+                                                    replyMarkup: inlineKeyboard);
                                             }
                                             else
                                             {
                                                 GorzdravError(chat.Id, getLpus.message!, getLpus.errorCode, cancellationToken);
                                             }
-
-
-                                            var inlineKeyboard = new InlineKeyboardMarkup(buttons);
-
-
-                                            await botClient.SendTextMessageAsync(chat.Id, "Выберите в каком медицинском учреждении желаете просмотреть предстоящие визиты: ",
-                                                replyMarkup: inlineKeyboard);                                            
 
                                             return;
                                         }
