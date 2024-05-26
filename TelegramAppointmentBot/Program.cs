@@ -42,6 +42,7 @@ class Program
 
     static async Task Main()
     {
+        Thread.CurrentThread.CurrentCulture = new CultureInfo("ru-RU");
 
         _botClient = new TelegramBotClient(Configuration.botToken); // Присваиваем нашей переменной значение, в параметре передаем Token, полученный от BotFather
         _receiverOptions = new ReceiverOptions // Также присваем значение настройкам бота
