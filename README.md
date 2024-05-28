@@ -1,10 +1,7 @@
 # Telegram Bot для записи к врачу СПб
 
-[![N|Solid](https://sun9-32.userapi.com/impg/CkHyiSfKgxtejKb8g3huo_Bd41gvgImQReIZgA/NOYGn-7wDkc.jpg?size=400x300&quality=96&sign=ab14a80cea531e4e141dc7ab9fbdcd27&type=album)](https://t.me/Medical_Appointment_SPb_Bot)
-
-
+[![alt](https://i.ibb.co/ssrzT7S/telegram-bot.png)](https://t.me/Medical_Appointment_SPb_Bot)
 Бот позволяет отлавливать запись к врачу на желаемый день и время
-
 
 ## Особенности
 - Удобноое создание записи к врачу
@@ -33,7 +30,7 @@
 
 
 
-## Tech
+## Технологии
 
 "Запись к врачу СПб" uses a number of open source projects to work properly:
 
@@ -44,132 +41,57 @@
 - [Docker] - Docker is an open platform for developing, shipping, and running applications
 - [MSSQL] - MSSQL is a relational database management system (DBMS) used to store and retrieve data from other software applications
 
+[.NET 6]: <https://dotnet.microsoft.com/download/dotnet/6.0>
+[Visual Studio 2022]: <https://visualstudio.microsoft.com/vs/>
+[EntityFrameworkCore 6]: https://www.nuget.org/packages/Microsoft.EntityFrameworkCore/6.0.0
+[Telegram.Bot]: https://core.telegram.org/bots/api
+[Docker]: https://www.docker.com/
+[MSSQL]: https://www.microsoft.com/sql-server
 
-## Installation
 
-Dillinger requires [Node.js](https://nodejs.org/) v10+ to run.
+## Установка
 
-Install the dependencies and devDependencies and start the server.
+Для развертывания проекта потребуется создать 2 конфигурационных фалйа (Configuration.cs)
 
+#### Код TelegramAppointmentBot.Context\Configuration.cs
 ```sh
-cd dillinger
-npm i
-node app
+namespace TelegramAppointmentBot.Context;
+
+public static class Configuration
+{
+    public static readonly string connectionString = "Server=appointmentDb,1433;Database=AppointmentBot;User Id=sa;Password=YourStrongPassword;Integrated Security=false;TrustServerCertificate=true";
+}
 ```
 
-For production environments...
-
+#### Код TelegramAppointmentBot\Configuration.cs
 ```sh
-npm install --production
-NODE_ENV=production node app
+namespace TelegramAppointmentBot
+{
+    public static class Configuration
+    {
+        public static readonly string botToken = "botTokenFromBotFather";
+    }
+}
 ```
-
-## Plugins
-
-Dillinger is currently extended with the following plugins.
-Instructions on how to use them in your own application are linked below.
-
-| Plugin | README |
-| ------ | ------ |
-| Dropbox | [plugins/dropbox/README.md][PlDb] |
-| GitHub | [plugins/github/README.md][PlGh] |
-| Google Drive | [plugins/googledrive/README.md][PlGd] |
-| OneDrive | [plugins/onedrive/README.md][PlOd] |
-| Medium | [plugins/medium/README.md][PlMe] |
-| Google Analytics | [plugins/googleanalytics/README.md][PlGa] |
-
-## Development
-
-Want to contribute? Great!
-
-Dillinger uses Gulp + Webpack for fast developing.
-Make a change in your file and instantaneously see your updates!
-
-Open your favorite Terminal and run these commands.
-
-First Tab:
-
+Теперь можно использовать команду в папке с решением
+### Linux
 ```sh
-node app
+docker composer up
 ```
-
-Second Tab:
-
+### Windows
 ```sh
-gulp watch
-```
-
-(optional) Third:
-
-```sh
-karma test
-```
-
-#### Building for source
-
-For production release:
-
-```sh
-gulp build --prod
-```
-
-Generating pre-built zip archives for distribution:
-
-```sh
-gulp build dist --prod
+docker-compose up
 ```
 
 ## Docker
 
-Dillinger is very easy to install and deploy in a Docker container.
+В целях безопасности требуется заменить значение SA_PASSWORD в файле docker-compose.yml
 
-By default, the Docker will expose port 8080, so change this within the
-Dockerfile if necessary. When ready, simply use the Dockerfile to
-build the image.
+Ввжно чтобы значение SA_PASSWORD совпадало с паролем из Context\Configuration.cs
 
-```sh
-cd dillinger
-docker build -t <youruser>/dillinger:${package.json.version} .
-```
-
-This will create the dillinger image and pull in the necessary dependencies.
-Be sure to swap out `${package.json.version}` with the actual
-version of Dillinger.
-
-Once done, run the Docker image and map the port to whatever you wish on
-your host. In this example, we simply map port 8000 of the host to
-port 8080 of the Docker (or whatever port was exposed in the Dockerfile):
-
-```sh
-docker run -d -p 8000:8080 --restart=always --cap-add=SYS_ADMIN --name=dillinger <youruser>/dillinger:${package.json.version}
-```
-
-> Note: `--capt-add=SYS-ADMIN` is required for PDF rendering.
-
-Verify the deployment by navigating to your server address in
-your preferred browser.
-
-```sh
-127.0.0.1:8000
-```
-
+Для базы данных используется 1433 порт. Порт для приложения определяется автоматически
 ## License
 
 MIT
 
-**Free Software, Hell Yeah!**
-
-[//]: # (These are reference links used in the body of this note and get stripped out when the markdown processor does its job. There is no need to format nicely because it shouldn't be seen)
-
- 
-   [node.js]: <http://nodejs.org>
-   [express]: <http://expressjs.com>
-   [AngularJS]: <http://angularjs.org>
-   [Gulp]: <http://gulpjs.com>
-
-   [.NET 6]: <https://dotnet.microsoft.com/download/dotnet/6.0>
-   [Visual Studio 2022]: <https://visualstudio.microsoft.com/vs/>
-   [EntityFrameworkCore 6]: https://www.nuget.org/packages/Microsoft.EntityFrameworkCore/6.0.0
-   [Telegram.Bot]: https://core.telegram.org/bots/api
-   [Docker]: https://www.docker.com/
-   [MSSQL]: https://www.microsoft.com/sql-server
+   
