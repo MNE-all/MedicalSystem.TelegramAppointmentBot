@@ -1,6 +1,7 @@
 # Telegram Bot для записи к врачу СПб
 
 [![alt](https://i.ibb.co/ssrzT7S/telegram-bot.png)](https://t.me/Medical_Appointment_SPb_Bot)
+
 Бот позволяет отлавливать запись к врачу на желаемый день и время
 
 ## Особенности
