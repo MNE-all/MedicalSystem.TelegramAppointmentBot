@@ -12,6 +12,7 @@
 - Безопасное хранение данных о профилях
 - Бот работает на основе горздрава 
 (запись реально происходит, в этом можно убедиться через личный кабинет на официальном сайте)
+
 [![N|Solid](https://gkbru.ru/wp-content/uploads/2022/02/zdorove.jpg?size=400x300&quality=96)](https://gorzdrav.spb.ru/)
 ## Возможности
 
@@ -34,21 +35,15 @@
 
 ## Tech
 
-Dillinger uses a number of open source projects to work properly:
+"Запись к врачу СПб" uses a number of open source projects to work properly:
 
-- [.NET 6] - .NET 6 enviroment
-- [Ace Editor] - awesome web-based text editor
-- [markdown-it] - Markdown parser done right. Fast and easy to extend.
-- [Twitter Bootstrap] - great UI boilerplate for modern web apps
-- [node.js] - evented I/O for the backend
-- [Express] - fast node.js network app framework [@tjholowaychuk]
-- [Gulp] - the streaming build system
-- [Breakdance](https://breakdance.github.io/breakdance/) - HTML
-to Markdown converter
-- [jQuery] - duh
+- [.NET 6] - .NET 6 is an open source platform for creating desktop, mobile and web applications that can run on any operating system
+- [Visual Studio 2022] - IDE
+- [EntityFrameworkCore 6] - ORM
+- [Telegram.Bot] - NuGet package to interact with the Telegram API 
+- [Docker] - Docker is an open platform for developing, shipping, and running applications
+- [MSSQL] - MSSQL is a relational database management system (DBMS) used to store and retrieve data from other software applications
 
-And of course Dillinger itself is open source with a [public repository][dill]
- on GitHub.
 
 ## Installation
 
@@ -164,11 +159,17 @@ MIT
 
 **Free Software, Hell Yeah!**
 
-[//]: # (These are reference links used in the body of this note and get stripped out when the markdown processor does its job. There is no need to format nicely because it shouldn't be seen. Thanks SO - http://stackoverflow.com/questions/4823468/store-comments-in-markdown-syntax)
+[//]: # (These are reference links used in the body of this note and get stripped out when the markdown processor does its job. There is no need to format nicely because it shouldn't be seen)
 
  
-   [.NET 6]: <http://ace.ajax.org>
    [node.js]: <http://nodejs.org>
    [express]: <http://expressjs.com>
    [AngularJS]: <http://angularjs.org>
    [Gulp]: <http://gulpjs.com>
+
+   [.NET 6]: <https://dotnet.microsoft.com/download/dotnet/6.0>
+   [Visual Studio 2022]: <https://visualstudio.microsoft.com/vs/>
+   [EntityFrameworkCore 6]: https://www.nuget.org/packages/Microsoft.EntityFrameworkCore/6.0.0
+   [Telegram.Bot]: https://core.telegram.org/bots/api
+   [Docker]: https://www.docker.com/
+   [MSSQL]: https://www.microsoft.com/sql-server
