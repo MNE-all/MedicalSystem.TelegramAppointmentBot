@@ -1,12 +1,20 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TelegramAppointmentBot", "TelegramAppointmentBot\TelegramAppointmentBot.csproj", "{97196239-36C4-4E87-8976-6626596D1A55}"
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.34928.147
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TelegramAppointmentBot", "TelegramAppointmentBot\TelegramAppointmentBot.csproj", "{97196239-36C4-4E87-8976-6626596D1A55}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TelegramAppointmentBot.Context", "TelegramAppointmentBot.Context\TelegramAppointmentBot.Context.csproj", "{FAE0270E-CABB-4ACF-8085-A7978D862955}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TelegramAppointmentBot.Context", "TelegramAppointmentBot.Context\TelegramAppointmentBot.Context.csproj", "{FAE0270E-CABB-4ACF-8085-A7978D862955}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TelegramAppointmentBot.Service.Contract", "TelegramAppointmentBot.Service.Contract\TelegramAppointmentBot.Service.Contract.csproj", "{C8E0F9B8-8F8C-4215-82E4-669CCFE8E640}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TelegramAppointmentBot.Service.Contract", "TelegramAppointmentBot.Service.Contract\TelegramAppointmentBot.Service.Contract.csproj", "{C8E0F9B8-8F8C-4215-82E4-669CCFE8E640}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TelegramAppointmentBot.Service", "TelegramAppointmentBot.Service\TelegramAppointmentBot.Service.csproj", "{8CA871D8-0FC5-49AD-970F-26C0F3B49BDD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TelegramAppointmentBot.Service", "TelegramAppointmentBot.Service\TelegramAppointmentBot.Service.csproj", "{8CA871D8-0FC5-49AD-970F-26C0F3B49BDD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{0F665100-18F1-4E4F-B076-D747EF9D3978}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,5 +38,8 @@ Global
 		{8CA871D8-0FC5-49AD-970F-26C0F3B49BDD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8CA871D8-0FC5-49AD-970F-26C0F3B49BDD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8CA871D8-0FC5-49AD-970F-26C0F3B49BDD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 EndGlobal
