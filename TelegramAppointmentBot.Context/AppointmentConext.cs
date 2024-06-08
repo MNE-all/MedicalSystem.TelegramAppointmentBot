@@ -16,11 +16,15 @@ public class AppointmentContext : DbContext
     public AppointmentContext()
     {
         Database.EnsureCreated();
+        
     }
+
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseSqlServer(Configuration.connectionString);
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+        optionsBuilder.UseNpgsql(Configuration.connectionStringPostgre);
+        // optionsBuilder.UseSqlServer(Configuration.connectionString);
         base.OnConfiguring(optionsBuilder);
     }
 }

@@ -12,7 +12,7 @@ services:
     container_name: appointmentDb
     image: "mcr.microsoft.com/mssql/server"
     environment:
-      MSSQL_SA_PASSWORD: "CJnEmigeG!@JLipcRy4&2MNv"
+      MSSQL_SA_PASSWORD: "CJnEmigeGJLipcRy42MNv"
       ACCEPT_EULA: "Y"
     ports:
       - "1433:1433"

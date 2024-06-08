@@ -272,6 +272,14 @@ namespace TelegramAppointmentBot.Commands
                         $"{(int)InlineMode.AppointmentDay}:Любой")
                     });
 
+                    /*
+                    buttons.Add(new[]
+                    {
+                        InlineKeyboardButton.WithCallbackData($"Выбор даты",
+                        $"{(int)InlineMode.AppointmentDates}:Выбор даты")
+                    });
+                    */
+
                     var inlineKeyboard = new InlineKeyboardMarkup(buttons);
 
                     await botClient.SendTextMessageAsync(
@@ -360,7 +368,7 @@ namespace TelegramAppointmentBot.Commands
                         {
                             new KeyboardButton[]
                             {
-                                new KeyboardButton("Любой")
+                                new KeyboardButton("Любое")
                             },
                         })
                     {
@@ -379,8 +387,11 @@ namespace TelegramAppointmentBot.Commands
                 GorzdravError(user!.Id, timetable.message!, timetable.errorCode, botClient, cancellationToken);
             }
         }
-        
-        
+        public async void AppointmentDates(User? user, ITelegramBotClient botClient, string[] list, CallbackQuery callbackQuery, CancellationToken cancellationToken)
+        {
+
+        }
+
         // Методы просмотра и удаления визитов
         public async void VisitsShow(User? user, ITelegramBotClient botClient, string[] list, CallbackQuery callbackQuery, CancellationToken cancellationToken)
         {

@@ -1,4 +1,7 @@
-﻿using System.Globalization;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
@@ -418,17 +421,5 @@ class Program
 
             Console.WriteLine($"{DateTime.Now}");
         });
-    }
-
-    private static async void GorzdravError(long chatId, string message, int errorCode, CancellationToken cancellationToken)
-    {
-        var tryMessage = "Повторите попытку или попробуйте позже";
-        var answer = $"Горздрав: {message}\n";
-        if (errorCode == 1)
-        {
-            answer += tryMessage;
-        }
-
-        await _botClient.SendTextMessageAsync(chatId, answer);
     }
 }
