@@ -123,7 +123,7 @@ namespace TelegramAppointmentBot.Commands
                 {
                     buttons.Add(new[]
                     {
-                        InlineKeyboardButton.WithCallbackData(lpu.lpuFullName, (int)InlineMode.AppointmentLPUs + ":" + lpu.id.ToString())
+                        InlineKeyboardButton.WithCallbackData(lpu.lpuShortName, (int)InlineMode.AppointmentLPUs + ":" + lpu.id.ToString())
                     });
                 }
                 var inlineKeyboard = new InlineKeyboardMarkup(buttons);
