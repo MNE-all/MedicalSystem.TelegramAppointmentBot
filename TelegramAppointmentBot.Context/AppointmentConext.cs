@@ -23,7 +23,7 @@ public class AppointmentContext : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
-        optionsBuilder.UseNpgsql(Configuration.connectionStringPostgre);
+        optionsBuilder.UseNpgsql(Configuration.connectionStringPostgreSQL);
         // optionsBuilder.UseSqlServer(Configuration.connectionString);
         base.OnConfiguring(optionsBuilder);
     }

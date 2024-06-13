@@ -3,6 +3,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 using TelegramAppointmentBot.Context.Enums;
 using TelegramAppointmentBot.Service.Contract.Interfaces;
+using TelegramAppointmentBot.Service.Implementation;
 
 namespace TelegramAppointmentBot.Commands
 {
@@ -11,7 +12,9 @@ namespace TelegramAppointmentBot.Commands
         private static IUserService UserService = null!;
         private static IAppointmentHunterService AppointmentHunterService = null!;
         private static IProfileService ProfileService = null!;
-        public TextCommands(IUserService userService, IAppointmentHunterService appointmentHunterService, IProfileService profileService)
+        private static IEncryptService EncryptService = new EncryptService();
+        public TextCommands(IUserService userService, IAppointmentHunterService appointmentHunterService, 
+            IProfileService profileService)
         {
             UserService = userService;
             AppointmentHunterService = appointmentHunterService;
@@ -29,6 +32,8 @@ namespace TelegramAppointmentBot.Commands
                 Statement = ProfileStatement.None
             }, cancellationToken);
             await ClearUserMemory(user, cancellationToken);
+
+            await EncryptService.Init(user!.Id);
 
             var replyKeyboard = new ReplyKeyboardMarkup(
                 new List<KeyboardButton[]>()

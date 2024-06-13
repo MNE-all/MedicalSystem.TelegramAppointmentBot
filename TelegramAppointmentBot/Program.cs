@@ -28,6 +28,9 @@ class Program
 
     private static ISpecialityService SpecialityService = new SpecialityService();
 
+    private static IEncryptService EncryptService = new EncryptService();
+
+
 
 
     // Это клиент для работы с Telegram Bot API, который позволяет отправлять сообщения, управлять ботом, подписываться на обновления и многое другое.
@@ -89,6 +92,9 @@ class Program
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Основная функция обработки событий
+    /// </summary>
     private static async Task UpdateHandler(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
         try
@@ -311,6 +317,10 @@ class Program
         }
     }
 
+    /// <summary>
+    /// Функция, пытающаяся записать пользователей
+    /// Выполняется регулярно
+    /// </summary>
     public static void TryToWrite(object? obj)
     {
         Console.WriteLine($"{DateTime.Now}");

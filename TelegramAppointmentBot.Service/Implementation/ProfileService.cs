@@ -1,3 +1,7 @@
+using System.Linq;
+using System.Net.WebSockets;
+using System.Reflection.Emit;
+using System.Xml.Linq;
 using TelegramAppointmentBot.Context;
 using TelegramAppointmentBot.Context.Models;
 using TelegramAppointmentBot.Context.Models.Request;
@@ -8,6 +12,7 @@ namespace TelegramAppointmentBot.Service.Implementation;
 
 public class ProfileService : IProfileService
 {
+    private static IEncryptService encryptService = new EncryptService();
     public Task<IEnumerable<GetUserProfiles>> GetUserProfilesAsync(long userId, CancellationToken cancellationToken)
     {
         var result = new List<GetUserProfiles>();
@@ -22,12 +27,26 @@ public class ProfileService : IProfileService
         return Task.FromResult<IEnumerable<GetUserProfiles>>(result);
     }
 
-    public Task<Profile> GetProfileByIdAsync(Guid id, CancellationToken cancellationToken)
+    public Task<GetProfileById> GetProfileByIdAsync(Guid id, CancellationToken cancellationToken)
     {
+        GetProfileById result = new();
         using (var db = new AppointmentContext())
         {
-            var result = db.Profiles.FirstOrDefault(p => p.Id == id);
-            return result != null ? Task<Profile>.FromResult(result) : null;
+            var profile = db.Profiles.FirstOrDefault(p => p.Id == id);
+            var userId = db.Users.First(u => u.SystemId == profile!.OwnerId).Id;
+            using (var encryptDb = new EncryptionContext())
+            {
+                var userEncrypt = encryptDb.UserEncrypts.First(u => u.Id == userId);
+
+                result.OMS = encryptService.Decrypt(profile.OMS, userEncrypt.Key, userEncrypt.IV).Result;
+                result.Surname = encryptService.Decrypt(profile.Surname, userEncrypt.Key, userEncrypt.IV).Result;
+                result.Name = encryptService.Decrypt(profile.Name, userEncrypt.Key, userEncrypt.IV).Result;
+                result.Patronomyc = encryptService.Decrypt(profile.Patronomyc, userEncrypt.Key, userEncrypt.IV).Result;
+                result.Birthdate = profile.Birthdate;
+                result.Id = profile.Id;
+                result.OwnerId = profile.OwnerId;
+            }
+            return Task<Profile>.FromResult(result);
         }
     }
 
@@ -61,8 +80,16 @@ public class ProfileService : IProfileService
     {
         using (var db = new AppointmentContext())
         {
-            db.Profiles.First(p => p.Id == profileId).OMS = OMS;
-            db.SaveChanges();
+            using(var encryptDb = new EncryptionContext())
+            {
+                var profile = db.Profiles.First(p => p.Id == profileId);
+                var userId = db.Users.First(u => u.SystemId == profile.OwnerId).Id;
+                var userEncrypt = encryptDb.UserEncrypts.First(u => u.Id == userId);
+
+                db.Profiles.First(p => p.Id == profileId).OMS = encryptService.Encrypt(OMS, userEncrypt.Key, userEncrypt.IV).Result;
+                db.SaveChanges();
+            }
+            
             return Task.CompletedTask;
         }
     }
@@ -71,8 +98,15 @@ public class ProfileService : IProfileService
     {
         using (var db = new AppointmentContext())
         {
-            db.Profiles.First(p => p.Id == profileId).Surname = Surname;
-            db.SaveChanges();
+            using (var encryptDb = new EncryptionContext())
+            {
+                var profile = db.Profiles.First(p => p.Id == profileId);
+                var userId = db.Users.First(u => u.SystemId == profile.OwnerId).Id;
+                var userEncrypt = encryptDb.UserEncrypts.First(u => u.Id == userId);
+
+                db.Profiles.First(p => p.Id == profileId).Surname = encryptService.Encrypt(Surname, userEncrypt.Key, userEncrypt.IV).Result;
+                db.SaveChanges();
+            }
             return Task.CompletedTask;
         }
     }
@@ -81,8 +115,15 @@ public class ProfileService : IProfileService
     {
         using (var db = new AppointmentContext())
         {
-            db.Profiles.First(p => p.Id == profileId).Name = Name;
-            db.SaveChanges();
+            using (var encryptDb = new EncryptionContext())
+            {
+                var profile = db.Profiles.First(p => p.Id == profileId);
+                var userId = db.Users.First(u => u.SystemId == profile.OwnerId).Id;
+                var userEncrypt = encryptDb.UserEncrypts.First(u => u.Id == userId);
+
+                db.Profiles.First(p => p.Id == profileId).Name = encryptService.Encrypt(Name, userEncrypt.Key, userEncrypt.IV).Result;
+                db.SaveChanges();
+            }
             return Task.CompletedTask;
         }
     }
@@ -91,8 +132,15 @@ public class ProfileService : IProfileService
     {
         using (var db = new AppointmentContext())
         {
-            db.Profiles.First(p => p.Id == profileId).Patronomyc = Patronomyc;
-            db.SaveChanges();
+            using (var encryptDb = new EncryptionContext())
+            {
+                var profile = db.Profiles.First(p => p.Id == profileId);
+                var userId = db.Users.First(u => u.SystemId == profile.OwnerId).Id;
+                var userEncrypt = encryptDb.UserEncrypts.First(u => u.Id == userId);
+
+                db.Profiles.First(p => p.Id == profileId).Patronomyc = encryptService.Encrypt(Patronomyc, userEncrypt.Key, userEncrypt.IV).Result;
+                db.SaveChanges();
+            }
             return Task.CompletedTask;
         }
     }
@@ -101,8 +149,15 @@ public class ProfileService : IProfileService
     {
         using (var db = new AppointmentContext())
         {
-            db.Profiles.First(p => p.Id == profileId).Email = Email;
-            db.SaveChanges();
+            using (var encryptDb = new EncryptionContext())
+            {
+                var profile = db.Profiles.First(p => p.Id == profileId);
+                var userId = db.Users.First(u => u.SystemId == profile.OwnerId).Id;
+                var userEncrypt = encryptDb.UserEncrypts.First(u => u.Id == userId);
+
+                db.Profiles.First(p => p.Id == profileId).Email = encryptService.Encrypt(Email, userEncrypt.Key, userEncrypt.IV).Result;
+                db.SaveChanges();
+            }
             return Task.CompletedTask;
         }
     }

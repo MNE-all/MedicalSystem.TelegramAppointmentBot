@@ -112,32 +112,30 @@ public class GorzdravService : IGorzdravService
     {
         try
         {
-            using (var db = new AppointmentContext())
+            var profile = profileService.GetProfileByIdAsync(profileId, cancellationToken).Result;
+            var content = new FindAPatient
             {
-                var profile = db.Profiles.First(x => x.Id == profileId);
-                var content = new FindAPatient
-                {
-                    lpuId = lpuId,
-                    firstName = profile.Name!,
-                    lastName = profile.Surname!,
-                    middleName = profile.Patronomyc!,
-                    birthdate = profile.Birthdate!.Value.ToShortDateString(),
+                lpuId = lpuId,
+                firstName = profile.Name!,
+                lastName = profile.Surname!,
+                middleName = profile.Patronomyc!,
+                birthdate = profile.Birthdate!.Value.ToShortDateString(),
 
-                };
+            };
 
-                var link = $"https://gorzdrav.spb.ru/_api/api/v2/patient/search?lpuId={lpuId}&lastName={profile.Surname}&firstName={profile.Name}&middleName={profile.Patronomyc}&birthdate={profile.Birthdate.Value.ToString("s")}";
+            var link = $"https://gorzdrav.spb.ru/_api/api/v2/patient/search?lpuId={lpuId}&lastName={profile.Surname}&firstName={profile.Name}&middleName={profile.Patronomyc}&birthdate={profile.Birthdate.Value.ToString("s")}";
 
-                using (var request = new HttpRequestMessage(HttpMethod.Get, link))
-                {
-                    var response = httpClient.SendAsync(request, cancellationToken).Result;
+            using (var request = new HttpRequestMessage(HttpMethod.Get, link))
+            {
+                var response = httpClient.SendAsync(request, cancellationToken).Result;
 
-                    Console.WriteLine(await response.Content.ReadAsStringAsync());
+                Console.WriteLine(await response.Content.ReadAsStringAsync());
 
-                    var responseBody = await response.Content.ReadFromJsonAsync<GetPatient>(cancellationToken: cancellationToken);
+                var responseBody = await response.Content.ReadFromJsonAsync<GetPatient>(cancellationToken: cancellationToken);
 
-                    return responseBody!;
-                }
+                return responseBody!;
             }
+
         }
         catch (Exception)
         {

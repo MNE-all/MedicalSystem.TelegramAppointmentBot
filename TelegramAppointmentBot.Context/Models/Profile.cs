@@ -4,11 +4,11 @@ public class Profile
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public string Title { get; set; } = null!;
-    public string? OMS { get; set; }
-    public string? Surname { get; set; }
-    public string? Name { get; set; }
-    public string? Patronomyc { get; set; }
-    public string? Email { get; set; }
+    public byte[]? OMS { get; set; }
+    public byte[]? Surname { get; set; }
+    public byte[]? Name { get; set; }
+    public byte[]? Patronomyc { get; set; }
+    public byte[]? Email { get; set; }
     public DateTime? Birthdate { get; set; }
 
     public User? Owner { get; set; }

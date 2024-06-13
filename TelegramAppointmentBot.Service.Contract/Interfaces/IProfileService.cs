@@ -22,7 +22,7 @@ public interface IProfileService
     /// <param name="id">Идентификатор профиля</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task<Profile> GetProfileByIdAsync(Guid id, CancellationToken cancellationToken);
+    Task<GetProfileById> GetProfileByIdAsync(Guid id, CancellationToken cancellationToken);
 
     /// <summary>
     /// Добавить профиль
