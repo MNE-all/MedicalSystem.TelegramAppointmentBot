@@ -195,7 +195,11 @@ public class ProfileService : IProfileService
     {
         using(var db = new AppointmentContext())
         {
-            db.Profiles.Remove(db.Profiles.First(x => x.Id == profileId));
+            var profile = db.Profiles.First(x => x.Id == profileId);
+
+            db.Hunters.RemoveRange(db.Hunters.Where(h => h.PatientId == profile.Id).ToList());
+
+            db.Profiles.Remove(profile);
             db.SaveChanges();
             return Task.CompletedTask;
         }

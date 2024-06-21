@@ -20,4 +20,8 @@ public class AppointmentHunter
     public DateTime? DesiredTimeTo { get; set; }
     public HunterStatement Statement { get; set; } = HunterStatement.None;
     public string SpecialityName { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public DateTime? DesiredCurrentDay { get; set; }
 }

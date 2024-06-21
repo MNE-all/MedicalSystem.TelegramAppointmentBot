@@ -266,19 +266,22 @@ namespace TelegramAppointmentBot.Commands
                             });
                         }
                     }
+
+                    buttons.Add(new[]
+                    {
+                        InlineKeyboardButton.WithCallbackData($"Выбор даты",
+                        $"{(int)InlineMode.AppointmentDates}:{list[1]}:{list[2]}")
+                    });
+
                     buttons.Add(new[]
                     {
                         InlineKeyboardButton.WithCallbackData($"Любой",
                         $"{(int)InlineMode.AppointmentDay}:Любой")
                     });
 
-                    /*
-                    buttons.Add(new[]
-                    {
-                        InlineKeyboardButton.WithCallbackData($"Выбор даты",
-                        $"{(int)InlineMode.AppointmentDates}:Выбор даты")
-                    });
-                    */
+                    
+                    
+                    
 
                     var inlineKeyboard = new InlineKeyboardMarkup(buttons);
 
@@ -303,11 +306,17 @@ namespace TelegramAppointmentBot.Commands
             await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
 
             System.DayOfWeek? dayOfWeek = null;
+            long? dateTicks = null;
 
             if (int.TryParse(list[1], out var dayOfWeekInt))
             {
                 dayOfWeek = (System.DayOfWeek)dayOfWeekInt;
                 await AppointmentHunterService.ChangeDayOfWeek(hunterId.Value, dayOfWeek.Value, cancellationToken);
+            }
+            else if (DateTime.TryParse(list[1], out var date))
+            {
+                dateTicks = date.Ticks;
+                await AppointmentHunterService.ChangeDate(hunterId.Value, date, cancellationToken);
             }
             if (timetable == null)
             {
@@ -327,6 +336,11 @@ namespace TelegramAppointmentBot.Commands
                     if (dayOfWeek != null)
                     {
                         times = timetable.result.Where(x => x.visitEnd.DayOfWeek == dayOfWeek).ToList();
+                    }
+                    else if (dateTicks != null)
+                    {
+                        DateTime date = new DateTime (dateTicks.Value);
+                        times = timetable.result.Where(x => x.visitEnd.ToShortDateString() == date.ToShortDateString()).ToList();
                     }
                     else
                     {
@@ -389,7 +403,67 @@ namespace TelegramAppointmentBot.Commands
         }
         public async void AppointmentDates(User? user, ITelegramBotClient botClient, string[] list, CallbackQuery callbackQuery, CancellationToken cancellationToken)
         {
+            var speciality = await SpecialityService.GetBySystemId(Guid.Parse(list[2]), cancellationToken);
 
+            var timetable = await GorzdravService.GetTimetable(speciality.lpuId, int.Parse(list[1]), cancellationToken);
+
+            await botClient.AnswerCallbackQueryAsync(callbackQuery.Id);
+
+            if (timetable == null)
+            {
+                await botClient.SendTextMessageAsync(user!.Id, $"Сервис горздрава временно недоступен");
+                return;
+            }
+            else if (timetable.success)
+            {
+                var hunter = await UserService.GetCurrentHunter(user!.Id, cancellationToken);
+                if (hunter != null && await AppointmentHunterService.GetStatement(hunter.Value, cancellationToken) == HunterStatement.None)
+                {
+                    await AppointmentHunterService.Delete(hunter.Value, cancellationToken);
+                }
+
+                var profileId = await UserService.GetCurrentProfile(user.Id!, cancellationToken);
+
+                var hunterId = await AppointmentHunterService.Create(profileId.Value, speciality.lpuId,
+                speciality.name, int.Parse(list[1]), cancellationToken);
+                await UserService.ChangeCurrentHunter(user.Id!, hunterId, cancellationToken);
+
+
+                var buttons = new List<InlineKeyboardButton[]>();
+                if (timetable.result != null)
+                {
+
+                    foreach (var day in timetable.result)
+                    {
+                        buttons.Add(new[]
+                        {
+                                InlineKeyboardButton.WithCallbackData($"{day.visitStart.ToShortDateString()}: " +
+                                new DateTime(day.visitStart.TimeOfDay.Ticks).ToString("t") +
+                                " - " +
+                                new DateTime(day.visitEnd.TimeOfDay.Ticks).ToString("t"),
+                                $"{(int)InlineMode.AppointmentDay}:{day.visitStart.ToShortDateString()}")
+                        });
+
+                    }
+                    buttons.Add(new[]
+                    {
+                        InlineKeyboardButton.WithCallbackData($"Любой",
+                        $"{(int)InlineMode.AppointmentDay}:Любой")
+                    });
+
+
+                    var inlineKeyboard = new InlineKeyboardMarkup(buttons);
+
+                    await botClient.SendTextMessageAsync(
+                    user!.Id,
+                        "Расписание врача: ",
+                        replyMarkup: inlineKeyboard);
+                }
+            }
+            else
+            {
+                GorzdravError(user!.Id, timetable.message!, timetable.errorCode, botClient, cancellationToken);
+            }
         }
 
         // Методы просмотра и удаления визитов
@@ -420,7 +494,7 @@ namespace TelegramAppointmentBot.Commands
                 {
                     buttons.Add(new[]
                     {
-                        InlineKeyboardButton.WithCallbackData($"{lpu.lpuFullName}",
+                        InlineKeyboardButton.WithCallbackData($"{lpu.lpuShortName}",
                         $"{(int)InlineMode.LpuVisitsShow}:{profileId}:{lpu.id}")
                     });
                 }
@@ -614,6 +688,11 @@ namespace TelegramAppointmentBot.Commands
                 if (hunter.DesiredDay != null)
                 {
                     dayOfWeek = CultureInfo.GetCultureInfo("ru-RU").DateTimeFormat.GetDayName(hunter.DesiredDay!.Value);
+                    dayOfWeek = char.ToUpper(dayOfWeek[0]) + dayOfWeek.Substring(1);
+                }
+                else if (hunter.DesiredCurrentDay != null)
+                {
+                    dayOfWeek = hunter.DesiredCurrentDay.Value.ToShortDateString();
                 }
 
                 string desiredTime = "Любое";
@@ -627,11 +706,12 @@ namespace TelegramAppointmentBot.Commands
                     desiredTime = $"{hunter.DesiredTimeFrom.Value.ToString("t")} - {hunter.DesiredTimeTo.Value.ToString("t")}";
                 }
 
+                
 
                 await botClient.SendTextMessageAsync(user!.Id,
                     $"К кому: {hunter.SpecialityName}\n" +
                     $"Желаемое время: {desiredTime}\n" +
-                    $"Желаемый день недели: {char.ToUpper(dayOfWeek[0]) + dayOfWeek.Substring(1)}", replyMarkup: inlineKeyboard);
+                    $"Желаемый день: {dayOfWeek}", replyMarkup: inlineKeyboard);
             }
             if (hunters.Count == 0)
             {

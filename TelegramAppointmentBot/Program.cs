@@ -71,7 +71,7 @@ class Program
 
         // Запуск регулярной попытки создать запись
         TimerCallback tm = new TimerCallback(TryToWrite);
-        Timer timer = new Timer(tm, null, 0, 1000 * 60 * 5);
+        Timer timer = new Timer(tm, null, 0, 1000 * 60 * 1);
         //
 
 
@@ -304,6 +304,10 @@ class Program
                                         updateCommands.ChangeBirthdate(user, botClient, list, callbackQuery, cancellationToken);
                                         return;
 
+                                    case InlineMode.AppointmentDates: 
+                                        updateCommands.AppointmentDates(user, botClient, list, callbackQuery, cancellationToken);
+                                        return;
+
                                 }
                             }
                             return;
@@ -349,6 +353,10 @@ class Program
                     {
                         list = appointments.result.Where(x => x.visitStart.DayOfWeek == hunter.DesiredDay).ToList();
                     }
+                    else if (hunter.DesiredCurrentDay != null)
+                    {
+                        list = appointments.result.Where(x => x.visitStart.ToShortDateString() == hunter.DesiredCurrentDay.Value.ToShortDateString()).ToList();
+                    }
                     else
                     {
                         list = appointments.result;
@@ -380,7 +388,7 @@ class Program
                             var user = await UserService.GetTelegramId(profile.OwnerId, cancellationToken);
 
 
-                            var patient = await GorzdravService.GetPatient(profile.Id, hunter.LpuId, cancellationToken);
+                            GetPatient? patient = null;
 
                             int errorCode = 1;
                             while (errorCode == 1)
@@ -394,8 +402,9 @@ class Program
                             {
                                 Console.WriteLine($"{item.id}");
                                 bool success = false;
-
-                                while (!success)
+                                errorCode = 1;
+                                string message = "";
+                                while (!success && errorCode == 1)
                                 {
                                     var answer = await GorzdravService.CreateAppointment(new TelegramAppointmentBot.Context.Models.Request.CreateAnAppointment
                                     {
@@ -413,16 +422,31 @@ class Program
                                     }, cancellationToken);
                                     if (answer == null) return;
 
+                                    errorCode = answer.errorCode;
                                     success = answer.success;
+
+                                    message = answer.message!;
                                 }
 
-                                await AppointmentHunterService.ChangeStatement(hunter.Id, HunterStatement.Finished, cancellationToken);
+                                if (errorCode == 0)
+                                {
+                                    await AppointmentHunterService.ChangeStatement(hunter.Id, HunterStatement.Finished, cancellationToken);
 
-                                await _botClient.SendTextMessageAsync(user, "Вы записаны к врачу!");
+                                    await _botClient.SendTextMessageAsync(user, "Вы записаны к врачу!");
+                                }
+                                else
+                                {
+                                    await AppointmentHunterService.ChangeStatement(hunter.Id, HunterStatement.Finished, cancellationToken);
+
+                                    await _botClient.SendTextMessageAsync(user, $"Горздрав: {message}\n\n" +
+                                        $"После исправлений требуется повторно создать запись!");
+                                }
                             }
                             else
                             {
-                                await _botClient.SendTextMessageAsync(user, "Горздрав: " + patient!.message);
+                                await AppointmentHunterService.ChangeStatement(hunter.Id, HunterStatement.Finished, cancellationToken);
+                                await _botClient.SendTextMessageAsync(user, "Горздрав: " + patient!.message +"\n\n" +
+                                    "После исправлений требуется повторно создать запись!");
                             }
                         }
                     }

@@ -157,17 +157,25 @@ namespace TelegramAppointmentBot.Commands
             var profileId = await UserService.GetCurrentProfile(user!.Id, cancellationToken);
             if (DateTime.TryParse(message.Text!, out var bithdate))
             {
-                await ProfileService.ChangeBirthdate(profileId.Value, bithdate, cancellationToken);
-                await UserService.ChangeStatement(user!.Id, ProfileStatement.Finished, cancellationToken);
-                await ProfileService.ValidateProfile(profileId.Value, cancellationToken);
-                var profile = ProfileService.GetProfileByIdAsync(profileId.Value, cancellationToken);
-                await botClient.SendTextMessageAsync(user.Id,
-                    $"Название профиля: {profile.Result.Title}\n" +
-                    $"ОМС: {profile.Result.OMS}\n" +
-                    $"Фамилия: {profile.Result.Surname}\n" +
-                    $"Имя: {profile.Result.Name}\n" +
-                    $"Отчество: {profile.Result.Patronomyc}\n" +
-                    $"Дата рождения: {profile.Result.Birthdate!.Value.ToString("d MMMM yyyy")}\n");
+                if (bithdate <= DateTime.Now)
+                {
+
+                    await ProfileService.ChangeBirthdate(profileId.Value, bithdate, cancellationToken);
+                    await UserService.ChangeStatement(user!.Id, ProfileStatement.Finished, cancellationToken);
+                    await ProfileService.ValidateProfile(profileId.Value, cancellationToken);
+                    var profile = ProfileService.GetProfileByIdAsync(profileId.Value, cancellationToken);
+                    await botClient.SendTextMessageAsync(user.Id,
+                        $"Название профиля: {profile.Result.Title}\n" +
+                        $"ОМС: {profile.Result.OMS}\n" +
+                        $"Фамилия: {profile.Result.Surname}\n" +
+                        $"Имя: {profile.Result.Name}\n" +
+                        $"Отчество: {profile.Result.Patronomyc}\n" +
+                        $"Дата рождения: {profile.Result.Birthdate!.Value.ToString("d MMMM yyyy")}\n");
+                }
+                else
+                {
+                    await botClient.SendTextMessageAsync(user.Id, "Неверные данные!");
+                }
             }
             else
             {
@@ -281,9 +289,16 @@ namespace TelegramAppointmentBot.Commands
 
             if (DateTime.TryParse(message.Text!, out var bithdate))
             {
-                await ProfileService.ChangeBirthdate(profileId.Value, DateTime.Parse(message.Text!), cancellationToken);
-                await ClearUserMemory(user, cancellationToken);
-                await botClient.SendTextMessageAsync(user.Id, "Дата рождения изменена!");
+                if (bithdate <= DateTime.Now)
+                {
+                    await ProfileService.ChangeBirthdate(profileId.Value, DateTime.Parse(message.Text!), cancellationToken);
+                    await ClearUserMemory(user, cancellationToken);
+                    await botClient.SendTextMessageAsync(user.Id, "Дата рождения изменена!");
+                }
+                else
+                {
+                    await botClient.SendTextMessageAsync(user.Id, "Неверные данные!");
+                }
             }
             else
             {

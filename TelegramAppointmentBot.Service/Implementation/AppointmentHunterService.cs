@@ -1,15 +1,23 @@
 ﻿using System;
 using TelegramAppointmentBot.Context;
 using TelegramAppointmentBot.Context.Enums;
-using TelegramAppointmentBot.Context.Migrations;
 using TelegramAppointmentBot.Context.Models;
-using TelegramAppointmentBot.Context.Models.Request;
 using TelegramAppointmentBot.Service.Contract.Interfaces;
 
 namespace TelegramAppointmentBot.Service.Implementation
 {
     public class AppointmentHunterService : IAppointmentHunterService
     {
+        public Task ChangeDate(Guid appointmentId, DateTime date, CancellationToken cancellationToken)
+        {
+            using (var db = new AppointmentContext())
+            {
+                db.Hunters.First(x => x.Id == appointmentId).DesiredCurrentDay = date;
+                db.SaveChanges();
+                return Task.CompletedTask;
+            }
+        }
+
         public Task ChangeDayOfWeek(Guid appointmentId, System.DayOfWeek? dayOfWeek, CancellationToken cancellationToken)
         {
             using (var db = new AppointmentContext())
@@ -91,7 +99,7 @@ namespace TelegramAppointmentBot.Service.Implementation
         {
             using (var db = new AppointmentContext())
             {
-                return Task.FromResult(db.Hunters.Where(x => x.Statement == HunterStatement.InProgress).ToList());
+                return Task.FromResult(db.Hunters.Where(x => x.Statement == HunterStatement.InProgress).OrderBy(h => h.CreatedAt).ToList());
             }
         }
 

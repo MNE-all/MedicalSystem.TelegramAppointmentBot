@@ -10,11 +10,11 @@ namespace TelegramAppointmentBot.Service.Implementation
         public Task<string> Decrypt(byte[] cipherText, byte[] Key, byte[] IV)
         {
             if (cipherText == null || cipherText.Length <= 0)
-                throw new ArgumentNullException(nameof(cipherText));
+                return Task.FromResult("");
             if (Key == null || Key.Length <= 0)
-                throw new ArgumentNullException(nameof(Key));
+                return Task.FromResult("");
             if (IV == null || IV.Length <= 0)
-                throw new ArgumentNullException(nameof(IV));
+                return Task.FromResult("");
 
             string plaintext = null;
 

@@ -10,6 +10,7 @@ namespace TelegramAppointmentBot.Service.Contract.Interfaces
         Task<Guid> Create(Guid patientId, int lpuId, string specialityName, int doctorId, CancellationToken cancellationToken);
 
         Task ChangeDayOfWeek(Guid appointmentId, System.DayOfWeek? dayOfWeek, CancellationToken cancellationToken);
+        Task ChangeDate(Guid appointmentId, DateTime date, CancellationToken cancellationToken);
 
         Task<AppointmentHunter> GetHunterById(Guid appointmentId, CancellationToken cancellationToken);
 
